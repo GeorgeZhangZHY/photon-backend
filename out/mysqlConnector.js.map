@@ -1,0 +1,1 @@
+{"version":3,"file":"mysqlConnector.js","sourceRoot":"","sources":["../src/mysqlConnector.ts"],"names":[],"mappings":";;AAAA,6BAA+B;AAE/B,IAAM,gBAAgB,GAAG,cAAM,OAAA,KAAK,CAAC,gBAAgB,CAAC;IAClD,IAAI,EAAE,WAAW;IACjB,IAAI,EAAE,QAAQ;IACd,QAAQ,EAAE,eAAe;IACzB,QAAQ,EAAE,aAAa;CAC1B,CAAC,EAL6B,CAK7B,CAAC;AAEH,kBAAe,gBAAgB,CAAC"}
