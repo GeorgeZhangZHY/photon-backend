@@ -2,6 +2,7 @@ import fetchRegions from './region';
 import * as express from 'express';
 
 const app = express();
+const permittedOrigin = 'http://localhost:3000';
 
 // 不要promisify app.get，参见https://stackoverflow.com/questions/24795911/how-to-promisify-nodejs-express-with-bluebird
 app.get('/', (req, res) => {
@@ -10,6 +11,7 @@ app.get('/', (req, res) => {
 
 app.get('/regions', (req, res) => {
     fetchRegions().then(result => {
+        res.setHeader('Access-Control-Allow-Origin', permittedOrigin);
         res.send(result);
     }).catch(err => {
         throw err;
