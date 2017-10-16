@@ -1,6 +1,6 @@
-import { createQuery } from '../utils/mysqlUtils';
+import { executeQuery } from '../utils/mysqlUtils';
 
 export default function fetchCostOptions(): Promise<{}> {
-    const queryStr = 'SELECT cid AS code, cname as name FROM cost_options';
-    return createQuery(queryStr);
+    const sqlStr = 'SELECT cid AS code, cname as name FROM cost_options';
+    return executeQuery(sqlStr);
 }

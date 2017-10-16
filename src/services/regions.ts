@@ -1,6 +1,6 @@
-import { createQuery } from '../utils/mysqlUtils';
+import { executeQuery } from '../utils/mysqlUtils';
 
 export default function fetchRegions(): Promise<{}> {
-    const queryStr = 'SELECT rid AS code, rname as name FROM regions';
-    return createQuery(queryStr);
+    const sqlStr = 'SELECT rid AS code, rname as name FROM regions';
+    return executeQuery(sqlStr);
 }

@@ -1,11 +1,14 @@
 import * as express from 'express';
+import * as bodyParser from 'body-parser';
 import { Response } from 'express';
 import fetchRegions from './services/regions';
 import fetchCostOptions from './services/costOptions';
 import fetchIdentities from './services/identities';
 import fetchGenders from './services/genders';
+import { addNewUser } from './services/user';
 
 const app = express();
+app.use(bodyParser.json());
 const permittedOrigin = 'http://localhost:3000';
 
 function respondGetWithoutParams(dataFetcher: () => Promise<{}>, res: Response) {
@@ -37,6 +40,22 @@ app.get('/identities', (req, res) => {
 
 app.get('/genders', (req, res) => {
     respondGetWithoutParams(fetchGenders, res);
+});
+
+app.post('/users', (req, res) => {
+    const result = addNewUser(req.body);
+    if (!result) {
+        res.setHeader('status', 400);
+        return res.send();
+    }
+    result.then(() => {
+        res.setHeader('status', 200);
+        res.send('success');
+    }).catch(() => {
+        res.setHeader('status', 400);
+        res.send();
+    });
+    return;
 });
 
 const server = app.listen(8080, () => {
