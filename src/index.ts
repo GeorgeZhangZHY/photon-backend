@@ -1,14 +1,27 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import { Response } from 'express';
+import * as expressSession from 'express-session';
+import { sessionStore } from './utils/mysqlUtils';
 import fetchRegions from './services/regions';
 import fetchCostOptions from './services/costOptions';
 import fetchIdentities from './services/identities';
 import fetchGenders from './services/genders';
-import { addNewUser } from './services/user';
+import { addNewUser, configuredPassport } from './services/user';
 
 const app = express();
+
 app.use(bodyParser.json());
+app.use(expressSession({
+    secret: 'GeorgeZhangEgool',
+    cookie: { maxAge: 60000 },
+    store: sessionStore,
+    resave: false,
+    saveUninitialized: false
+}));
+app.use(configuredPassport.initialize());
+app.use(configuredPassport.session());
+
 const permittedOrigin = 'http://localhost:3000';
 
 function respondGetWithoutParams(dataFetcher: () => Promise<{}>, res: Response) {
@@ -56,6 +69,15 @@ app.post('/users', (req, res) => {
         res.send();
     });
     return;
+});
+
+app.post('/login', configuredPassport.authenticate('local'), (req, res) => {
+    res.send(req.user);
+});
+
+app.get('/logout', (req, res) => {
+    req.logout();
+    res.send();
 });
 
 const server = app.listen(8080, () => {

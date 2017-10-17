@@ -1,11 +1,20 @@
 import * as mysql from 'mysql';
+import * as expressSession from 'express-session';
+import * as mysqlSession from 'express-mysql-session';
 
-const createConnection = () => mysql.createConnection({
+const options = {
     host: 'localhost',
     user: 'George',
     password: 'Hello, world!',
     database: 'photon_data'
-});
+};
+
+const createConnection = () => mysql.createConnection(options);
+
+// tslint:disable-next-line:no-any
+const MysqlStore = (<any> mysqlSession)(expressSession);
+
+export const sessionStore = new MysqlStore(options);
 
 export const escape = mysql.escape;
 
@@ -25,7 +34,7 @@ export function executeQuery(sqlStr: string, values?: any) {
         };
 
         if (values) {
-            connection.query(sqlStr, values, callback);
+            connection.query(sqlStr, values, callback); // values会自动被sql转义，避免sql注入攻击
         } else {
             connection.query(sqlStr, callback);
         }
