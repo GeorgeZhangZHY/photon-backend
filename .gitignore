@@ -1,13 +1,16 @@
 # See https://help.github.com/ignore-files/ for more about ignoring files.
 
 # ide
-.vscode
+/.vscode
 
 # dependencies
 /node_modules
 
 # testing
 /coverage
+
+# sqlite db files
+/res
 
 # production
 /build

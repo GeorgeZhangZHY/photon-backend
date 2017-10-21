@@ -1,7 +1,7 @@
 import * as passport from 'passport';
 import * as passportLocal from 'passport-local';
-import { executeQuery } from '../utils/mysqlUtils';
-import mapKeys from '../utils/keyMapper';
+import { executeQuery } from '../utils/sqliteUtils';
+import { mapKeys, getEntries } from '../utils/objectUtils';
 
 export type User = {
     id: number,
@@ -45,32 +45,47 @@ export function addNewUser(newUser: Partial<User>): Promise<{}> | false {
     if (!validateUserInput(newUser)) {
         return false;
     }
-    const sqlStr = 'INSERT INTO users SET ?';
-    const values = mapKeys(newUser, objectToDataMap);
+    const userData = mapKeys(newUser, objectToDataMap);
+    const keys = getEntries(userData).map(pair => pair[0]);
+    const values = getEntries(userData).map(pair => pair[1]);
+    const sqlStr = `INSERT INTO users (${keys.join(',')})
+                    VALUES(${keys.map(() => '?').join(',')})`;
+
     return executeQuery(sqlStr, values);
 }
 
 passport.use(new passportLocal.Strategy({ usernameField: 'name' }, (username, password, done) => {
     const sqlStr = 'SELECT * FROM users WHERE uname = ?';
     executeQuery(sqlStr, username).then((result) => {
-        const user = <User> mapKeys(result[0], objectToDataMap, true);
-        if (user.password === password) {
+        if (result.length === 0) {
+            return done('No such user!');
+        }
+        const user = <User>mapKeys(result[0], objectToDataMap, true);
+        if (user && (user.password === password)) {
             done(null, user);
         } else {
             done(`Wrong password or username! expected: ${user.password} actual:${password}`);
         }
     }).catch(err => {
-        // tslint:disable-next-line:no-console
-        console.log(err);
+        done(err);
     });
 }));
 
-passport.serializeUser((user, done) => {
-    done(null, user);
+passport.serializeUser((user: Partial<User>, done) => {
+    done(null, user.id);
 });
 
-passport.deserializeUser((user, done) => { // 删除user对象
-    done(null, user); // 可以通过数据库方式操作
+passport.deserializeUser((id: number, done) => {
+    const sqlStr = 'SELECT * FROM users WHERE uid = ?';
+    executeQuery(sqlStr, id).then(result => {
+        if (result.length === 0) {
+            return done('No such user!');
+        }
+        const user = <User>mapKeys(result[0], objectToDataMap, true);
+        done(null, user);
+    }).catch(err => {
+        done(err);
+    });
 });
 
 export const configuredPassport = passport; 

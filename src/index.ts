@@ -1,8 +1,7 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import { Response } from 'express';
-import * as expressSession from 'express-session';
-import { sessionStore } from './utils/mysqlUtils';
+import { expressSessionHandler } from './utils/sessionUtils';
 import fetchRegions from './services/regions';
 import fetchCostOptions from './services/costOptions';
 import fetchIdentities from './services/identities';
@@ -12,13 +11,7 @@ import { addNewUser, configuredPassport } from './services/user';
 const app = express();
 
 app.use(bodyParser.json());
-app.use(expressSession({
-    secret: 'GeorgeZhangEgool',
-    cookie: { maxAge: 60000 },
-    store: sessionStore,
-    resave: false,
-    saveUninitialized: false
-}));
+app.use(expressSessionHandler);
 app.use(configuredPassport.initialize());
 app.use(configuredPassport.session());
 
