@@ -22,7 +22,7 @@ export function executeQuery(sqlStr: string, values?: {} | any[]) {
 
     const query = queryMethods[sqlStr.trim().substring(0, 6).toLowerCase()];
 
-    return new Promise<any[]>((resolve, reject) => {
+    return new Promise<any[] | void>((resolve, reject) => {
         const callback = (err: Error, rows?: any[]) => {
             if (err) {
                 reject(err);

@@ -15,4 +15,6 @@
 # production
 /build
 /out
+
+# user uploaded files
 /public

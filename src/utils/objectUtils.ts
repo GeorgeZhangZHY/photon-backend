@@ -8,9 +8,13 @@ export function mapKeys(source: Object, keyMap: Object, isReverse: boolean = fal
     let result = {};
     Object.getOwnPropertyNames(keyMap).forEach(key => {
         if (isReverse) {
-            result[key] = source[keyMap[key]];
+            if (source.hasOwnProperty(keyMap[key])) {
+                result[key] = source[keyMap[key]];
+            }
         } else {
-            result[keyMap[key]] = source[key];
+            if (source.hasOwnProperty(key)) {
+                result[keyMap[key]] = source[key];
+            }
         }
     });
     return result;
@@ -20,8 +24,37 @@ export function mapKeys(source: Object, keyMap: Object, isReverse: boolean = fal
  * 以二维数组的形式返回一个对象自身的所有键值对
  * @param obj 
  */
-// tslint:disable-next-line:no-any
 export function getEntries(obj: Object): [string, any][] {
-    // tslint:disable-next-line:no-any
-    return <[string, any][]> Object.getOwnPropertyNames(obj).map(key => [key, obj[key]]);
+    return <[string, any][]>Object.getOwnPropertyNames(obj).map(key => [key, obj[key]]);
+}
+
+/**
+ * 返回一个对象的所有键和所有值，其位置一一对应
+ * @param obj 
+ */
+export function getKeysAndValues(obj: Object) {
+    let result: { keys: string[], values: any[] } = { keys: [], values: [] };
+    Object.getOwnPropertyNames(obj).forEach(key => {
+        result.keys.push(key);
+        result.values.push(obj[key]);
+    });
+    return result;
+}
+
+/**
+ * 将多维数组扁平化为一维数组
+ * @param arr 任意嵌套的数组
+ */
+export function flattenArray(arr: any[]): any[] {
+    let result: any[] = [];
+    (function readIn(a: any[]): void {
+        a.forEach(element => {
+            if (element instanceof Array) {
+                readIn(element);
+            } else {
+                result.push(element);
+            }
+        });
+    })(arr);
+    return result;
 }

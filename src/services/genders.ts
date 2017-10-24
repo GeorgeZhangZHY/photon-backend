@@ -1,6 +1,6 @@
 import { executeQuery } from '../utils/sqliteUtils';
 
-export default function fetchGenders(): Promise<{}> {
+export default function fetchGenders(): Promise<any[]> {
     const sqlStr = 'SELECT gid AS code, gname as name FROM genders';
-    return executeQuery(sqlStr);
+    return <Promise<any[]>>executeQuery(sqlStr);
 }
