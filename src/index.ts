@@ -7,6 +7,7 @@ import fetchCostOptions from './services/costOptions';
 import fetchIdentities from './services/identities';
 import fetchGenders from './services/genders';
 import fetchTags from './services/tags';
+import { addNewPost, getLatestPosts } from './services/posts';
 import { addNewUser, configuredPassport, modifyUserInfo, modifyAvatar, modifyQRCode } from './services/users';
 
 const app = express();
@@ -18,22 +19,24 @@ app.use(configuredPassport.session());
 
 const permittedOrigin = 'http://localhost:3000';
 
-function respondGetWithoutParams(dataFetcher: () => Promise<{} | Array<any>>, res: Response) {
-    dataFetcher().then(result => {
+function respondGet(asyncData: Promise<{} | Array<any>>, res: Response) {
+    asyncData.then(data => {
         res.setHeader('Access-Control-Allow-Origin', permittedOrigin);
-        res.send(result);
+        res.send(data);
     }).catch(err => {
-        console.log(err);
         res.sendStatus(500);
     });
 }
 
-function respondWithoutData(process: Promise<void>, res: Response) {
-    process.then(() => {
+function respondWithoutData(asyncResult: Promise<any>, res: Response) {
+    asyncResult.then(() => {
         res.sendStatus(200);
     }).catch(err => {
-        console.log(err);
-        res.sendStatus(500);
+        if (err.code === 'SQLITE_CONSTRAINT') {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
     });
 }
 
@@ -43,31 +46,27 @@ app.get('/', (req, res) => {
 });
 
 app.get('/regions', (req, res) => {
-    respondGetWithoutParams(fetchRegions, res);
+    respondGet(fetchRegions(), res);
 });
 
 app.get('/costOptions', (req, res) => {
-    respondGetWithoutParams(fetchCostOptions, res);
+    respondGet(fetchCostOptions(), res);
 });
 
 app.get('/identities', (req, res) => {
-    respondGetWithoutParams(fetchIdentities, res);
+    respondGet(fetchIdentities(), res);
 });
 
 app.get('/genders', (req, res) => {
-    respondGetWithoutParams(fetchGenders, res);
+    respondGet(fetchGenders(), res);
 });
 
 app.get('/tags', (req, res) => {
-    respondGetWithoutParams(fetchTags, res);
+    respondGet(fetchTags(), res);
 });
 
 app.post('/users', (req, res) => {
-    const result = addNewUser(req.body);
-    if (!result) {
-        return res.sendStatus(400);
-    }
-    return respondWithoutData(result, res);
+    respondWithoutData(addNewUser(req.body), res);
 });
 
 app.put('/users', (req, res) => {
@@ -91,6 +90,17 @@ app.post('/login', configuredPassport.authenticate('local'), (req, res) => {
 app.get('/logout', (req, res) => {
     req.logout();
     res.sendStatus(200);
+});
+
+app.get('/posts', (req, res) => {
+    let { pageNum, pageSize } = req.query;  // query中的是字符串
+    pageNum = Number(pageNum);
+    pageSize = Number(pageSize);
+    respondGet(getLatestPosts(pageNum, pageSize), res);
+});
+
+app.post('/posts', (req, res) => {
+    respondWithoutData(addNewPost(req.body), res);
 });
 
 const server = app.listen(8080, () => {

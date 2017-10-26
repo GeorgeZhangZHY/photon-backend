@@ -1,6 +1,6 @@
 import * as passport from 'passport';
 import * as passportLocal from 'passport-local';
-import { executeQuery } from '../utils/sqliteUtils';
+import { executeQuery, insertData } from '../utils/sqliteUtils';
 import { mapKeys, getKeysAndValues } from '../utils/objectUtils';
 import { convertDataToImage } from '../utils/imageUtils';
 
@@ -10,7 +10,7 @@ type User = {
     name: string,
     wechatId: string,
     qqNum: number,
-    phoneNum: number,
+    phoneNum: string, // node-sqlite3在进行sql转义后，较大的数的长度始终无法匹配数据CHECK约束，改为字符串可解决
     identityCode: number,
     genderCode: number,
     regionCode: number,
@@ -32,26 +32,9 @@ const objectToDataMap = {
     regionCode: 'rid'
 };
 
-// 对用户输入的数据进行检验及处理，以便进行sql操作，若存在不合法的数据，则向浏览器反馈失败信息；
-function validateUserInput(userInput: Partial<User>): boolean {
-    // 业务逻辑检验，只反馈失败结果即可，浏览器端的检测已经标明失败原因
-    if (userInput.phoneNum && (userInput.phoneNum.toString().length !== 11)) {
-        return false;
-    }
-
-    return true;
-}
-
-export function addNewUser(newUser: Partial<User>): Promise<void> | false {
-    if (!validateUserInput(newUser)) {
-        return false;
-    }
+export function addNewUser(newUser: Partial<User>): Promise<number> {
     const userData = mapKeys(newUser, objectToDataMap);
-    const { keys, values } = getKeysAndValues(userData);
-    const sqlStr = `INSERT INTO users (${keys.join(',')})
-                    VALUES(${keys.map(() => '?').join(',')})`;
-
-    return <Promise<void>>executeQuery(sqlStr, values);
+    return insertData('users', userData);  // 数据有效性检验通过sql约束来进行
 }
 
 // 修改除了头像和二维码之外的信息
@@ -71,17 +54,17 @@ export function modifyAvatar(id: number, newAvatarDataUrl: string): Promise<void
     });
 }
 
-export function modifyQRCode(id: number, newQRCodeDataUrl: string): Promise<void>{
+export function modifyQRCode(id: number, newQRCodeDataUrl: string): Promise<void> {
     const path = './public/qrCodes/u' + id + '.png';
     return <Promise<void>>convertDataToImage(newQRCodeDataUrl, path).then(() => {
         const sqlStr = 'UPDATE users SET wechat_qrcode_url = ? WHERE uid = ?';
         return executeQuery(sqlStr, [path, id]);
-    }); 
+    });
 }
 
 passport.use(new passportLocal.Strategy({ usernameField: 'name' }, (username, password, done) => {
     const sqlStr = 'SELECT * FROM users WHERE uname = ?';
-    executeQuery(sqlStr, username).then((result) => {
+    executeQuery(sqlStr, [username]).then((result) => {
         if ((<any[]>result).length === 0) {
             return done(null, false, { message: 'No such user!' });
         }
@@ -103,7 +86,7 @@ passport.serializeUser((user: Partial<User>, done) => {
 
 passport.deserializeUser((id: number, done) => {
     const sqlStr = 'SELECT * FROM users WHERE uid = ?';
-    executeQuery(sqlStr, id).then(result => {
+    executeQuery(sqlStr, [id]).then(result => {
         if ((<any[]>result).length === 0) {
             return done('No such user!');
         }

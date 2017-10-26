@@ -1,9 +1,9 @@
 import * as sqlite3 from 'sqlite3';
+import { getKeysAndValues } from './objectUtils';
 
 const path = 'res/photon_data.db';
 const database = new sqlite3.Database(path, (error) => {
     if (error) {
-        // tslint:disable-next-line:no-console
         console.log(error);
     } else {
         database.run('PRAGMA foreign_keys = ON;');
@@ -18,16 +18,24 @@ const queryMethods = {
     insert: database.run.bind(database)
 };
 
-export function executeQuery(sqlStr: string, values?: {} | any[]) {
+export function insertData(tableName: string, dataObject: {}) {
+    const { keys, values } = getKeysAndValues(dataObject);
+    const sqlStr = `INSERT INTO ${tableName} (${keys.join(', ')})
+                    VALUES(${keys.map(() => '?').join(', ')})`;
+
+    return <Promise<number>>executeQuery(sqlStr, values);
+}
+
+export function executeQuery(sqlStr: string, values?: any[]) {
 
     const query = queryMethods[sqlStr.trim().substring(0, 6).toLowerCase()];
 
-    return new Promise<any[] | void>((resolve, reject) => {
-        const callback = (err: Error, rows?: any[]) => {
+    return new Promise<any[] | void | number>((resolve, reject) => {
+        const callback = function (err: Error, rows?: any[]) {
             if (err) {
                 reject(err);
             } else {
-                resolve(rows); // run成功时rows为undefined
+                resolve(rows); // rows只对SELECT语句有效，其余语句为undefined
             }
         };
 
@@ -36,5 +44,8 @@ export function executeQuery(sqlStr: string, values?: {} | any[]) {
         } else {
             query(sqlStr, callback);
         }
+    }).catch(err => {
+        console.log(err);
+        throw err;
     });
 }
