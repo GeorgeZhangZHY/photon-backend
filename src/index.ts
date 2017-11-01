@@ -7,8 +7,9 @@ import fetchCostOptions from './services/costOptions';
 import fetchIdentities from './services/identities';
 import fetchGenders from './services/genders';
 import fetchTags from './services/tags';
-import { addNewPost, getLatestPosts } from './services/posts';
+import { addNewPost, getLatestPosts, modifyPost } from './services/posts';
 import { addNewUser, configuredPassport, modifyUserInfo, modifyAvatar, modifyQRCode } from './services/users';
+import { addNewRequest } from './services/requests';
 
 const app = express();
 
@@ -101,6 +102,14 @@ app.get('/posts', (req, res) => {
 
 app.post('/posts', (req, res) => {
     respondWithoutData(addNewPost(req.body), res);
+});
+
+app.put('/posts', (req, res) => {
+    respondWithoutData(modifyPost(req.body), res);
+});
+
+app.post('/requests', (req, res) => {
+    respondWithoutData(addNewRequest(req.body), res);
 });
 
 const server = app.listen(8080, () => {

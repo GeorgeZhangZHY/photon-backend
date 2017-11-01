@@ -1,7 +1,7 @@
 import * as passport from 'passport';
 import * as passportLocal from 'passport-local';
-import { executeQuery, insertData } from '../utils/sqliteUtils';
-import { mapKeys, getKeysAndValues } from '../utils/objectUtils';
+import { executeQuery, insertData, updateData } from '../utils/sqliteUtils';
+import { mapKeys } from '../utils/objectUtils';
 import { convertDataToImage } from '../utils/imageUtils';
 
 type User = {
@@ -32,7 +32,7 @@ const objectToDataMap = {
     regionCode: 'rid'
 };
 
-export function addNewUser(newUser: Partial<User>): Promise<number> {
+export function addNewUser(newUser: Partial<User>): Promise<void> {
     const userData = mapKeys(newUser, objectToDataMap);
     return insertData('users', userData);  // 数据有效性检验通过sql约束来进行
 }
@@ -40,10 +40,7 @@ export function addNewUser(newUser: Partial<User>): Promise<number> {
 // 修改除了头像和二维码之外的信息
 export function modifyUserInfo(modifiedUser: User): Promise<void> {
     const modifiedUserData = mapKeys(modifiedUser, objectToDataMap);
-    const { keys, values } = getKeysAndValues(modifiedUserData);
-    values.push(modifiedUser.id);
-    const sqlStr = `UPDATE users SET ${keys.map(key => key + ' = ?').join(', ')} WHERE uid = ?`;  // 该库只有‘=’后可以用占位符
-    return <Promise<void>>executeQuery(sqlStr, values);
+    return updateData('users', 'uid', modifiedUserData);
 }
 
 export function modifyAvatar(id: number, newAvatarDataUrl: string): Promise<void> {
