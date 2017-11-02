@@ -1,8 +1,8 @@
-import { insertData } from '../utils/sqliteUtils';
+import { insertData, executeQuery } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
 
 type NewRequest = {
-    userId: number,
+    requesterId: number,
     postId: number,
     message: string,
 };
@@ -26,11 +26,11 @@ type OthersRequest = {
 
 // 用户自己向他人发起的约拍请求
 type OwnRequest = {
-
-}
+    requestTime: string
+} & NewRequest;
 
 const objectToDataMap = {
-    userId: 'uid',
+    requesterId: 'uid',
     postId: 'pid',
     message: 'message',
     requestTime: 'request_time',
@@ -50,7 +50,20 @@ export function addNewRequest(newRequest: NewRequest): Promise<void> {
     return insertData('requests', requestData);
 }
 
-// 获取用户发起约拍请求
-export function getOwnRequests(userId: number): Promise<Request[]> {
-    const sqlStr =
+// 获取用户发起的约拍请求
+export function getOwnRequests(userId: number): Promise<OwnRequest[]> {
+    const sqlStr = 'SELECT uid, pid, message, request_time FROM requests WHERE uid = ?';
+    return executeQuery(sqlStr, [userId]).then(rows =>
+        (<any[]>rows).map(row => <OwnRequest>mapKeys(row, objectToDataMap, true))
+    );
+}
+
+// 获得他人向该用户发起的约拍请求
+export function getOthersRequests(userId: number): Promise<OthersRequest[]> {
+    const sqlStr = `SELECT r.*, u.gid, u.iid, u.uname, u.phone_num, u.qq_num, 
+                        u.wechat_id, u.wechat_qrcode_url, u.avatar_url
+                    FROM users u, requests r, posts p
+                    WHERE p.uid = ? AND p.pid = r.pid AND r.uid = u.uid`;
+    return executeQuery(sqlStr, [userId])
+        .then(rows => (<any[]>rows).map(row => <OthersRequest>mapKeys(row, objectToDataMap, true)));
 }

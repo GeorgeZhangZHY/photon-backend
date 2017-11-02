@@ -1,6 +1,6 @@
 import { executeQuery, insertData, updateData, deleteData } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
-import { convertDataToImage, deleteImage } from '../utils/imageUtils';
+import { convertDataToImage, deleteImage, diffImageUrls, getMaxImageOrdinal } from '../utils/imageUtils';
 
 type NewPost = {
     ownerId: number,
@@ -50,18 +50,16 @@ function savePostPhoto(postId: number, dataUrl: string, photoIndex: number): Pro
     return convertDataToImage(dataUrl, path).then(() => path);
 }
 
-// 比较客户端传来的url和服务器已有的url，从而确定应该删除哪些图片，新增哪些图片
-function diffPhotoUrls(oldUrls: string[], newUrls: string[]) {
-    let dataUrlsToAdd = newUrls.filter(newUrl => newUrl.search(/^data:image\/\w+;base64,/) !== -1);   // 为dataUrl
-    let urlsToDelete = oldUrls.filter(oldUrl => newUrls.findIndex(newUrl => newUrl === oldUrl) === -1);
-    return { dataUrlsToAdd, urlsToDelete };
-}
-
-// 获取某个帖子里已有的照片url的最大的后缀序号, 没有照片时返回-1
-function getMaxPhotoIndex(photoUrls: string[]): number {
-    return photoUrls
-        .map(url => +(<string[]>url.match(/\d+.png$/))[0].split('.')[0])
-        .reduce((accu, next) => accu > next ? accu : next, -1);
+// 根据已有的帖子信息获取其标签和图片，并将结果附加到传入的对象上
+function getPostTagsAndUrls(partialPostData: { pid: number } & any) {
+    return Promise.all([
+        executeQuery('SELECT tagid FROM post_tags WHERE pid = ?', [partialPostData.pid]).then(tags => {
+            partialPostData.tagids = (<any[]>tags).map(tag => tag.tagid);
+        }), // 获取帖子对应的所有标签
+        executeQuery('SELECT photo_url FROM post_photo_urls WHERE pid = ?', [partialPostData.pid]).then(photoUrls => {
+            partialPostData.photo_urls = (<any[]>photoUrls).map(url => url.photo_url);
+        })  // 获取帖子的图片
+    ]);
 }
 
 // 需要将帖子本身的内容、帖子的图片、帖子的标签分别存到不同的表
@@ -111,13 +109,17 @@ export function addNewPost(newPost: NewPost) {
 
 }
 
-export function getPost(postId: number): Promise<Post>{
+export function getPost(postId: number): Promise<Post> {
     const sqlStr = `SELECT p.*, t.tname, t.cover_url, u.uname, u.iid, u.gid, ifnull(r.rnum, 0) as rnum
                     FROM posts p LEFT OUTER JOIN themes t ON p.tid = t.tid JOIN users u ON p.uid = u.uid
                     LEFT OUTER JOIN (
                         SELECT pid, count(*) AS rnum FROM requests
                         GROUP BY pid ) r ON p.pid = r.pid
                     WHERE p.pid = ?`;
+    return executeQuery(sqlStr, [postId])
+        .then(rows =>
+            getPostTagsAndUrls(rows[0])
+            .then(() => <Post>mapKeys(rows[0], objectToDataMap, true)));
 }
 
 // pageNum从0开始
@@ -135,16 +137,7 @@ export function getLatestPosts(pageNum: number, pageSize: number): Promise<Post[
 
     return executeQuery(mainSqlStr, [pageSize, pageNum * pageSize]).then(rows => {
         dataList = <any[]>rows;
-        return Promise.all(dataList.map(row => {
-            return Promise.all([
-                executeQuery('SELECT tagid FROM post_tags WHERE pid = ?', [row.pid]).then(tags => {
-                    row.tagids = (<any[]>tags).map(tag => tag.tagid);
-                }), // 获取帖子对应的所有标签
-                executeQuery('SELECT photo_url FROM post_photo_urls WHERE pid = ?', [row.pid]).then(photoUrls => {
-                    row.photo_urls = (<any[]>photoUrls).map(url => url.photo_url);
-                })  // 获取帖子的图片
-            ]);
-        }));
+        return Promise.all(dataList.map(row => getPostTagsAndUrls(row)));
     }).then(() => <Post[]>dataList.map(data => mapKeys(data, objectToDataMap, true)));
 }
 
@@ -182,8 +175,8 @@ export function modifyPost(modifiedPost: Post) {
     const updatePhotos = executeQuery('SELECT photo_url as photoUrl FROM post_photo_urls WHERE pid = ?', [pid])
         .then(rows => {
             let oldUrls: string[] = (<any[]>rows).map(row => row.photoUrl);
-            const maxOldIndex = getMaxPhotoIndex(oldUrls);
-            const { dataUrlsToAdd, urlsToDelete } = diffPhotoUrls(oldUrls, photoUrls);
+            const maxOldIndex = getMaxImageOrdinal(oldUrls);
+            const { dataUrlsToAdd, urlsToDelete } = diffImageUrls(oldUrls, photoUrls);
             const deleteUnwanted = Promise.all(urlsToDelete.map(url => deleteImage(url).then(() =>
                 deleteData('post_photo_urls', { pid, photo_url: url })
             )));

@@ -4,22 +4,25 @@ import { executeQuery, insertData, updateData } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
 import { convertDataToImage } from '../utils/imageUtils';
 
-type User = {
-    id: number,
-    password?: string,
-    name: string,
-    wechatId: string,
-    qqNum: number,
-    phoneNum: string, // node-sqlite3在进行sql转义后，较大的数的长度始终无法匹配数据CHECK约束，改为字符串可解决
+export type UserBriefInfo = {
+    userId: number,
+    userName: string,
     identityCode: number,
     genderCode: number,
     regionCode: number,
-    wechatQRCodeUrl: string,
     avatarUrl: string
 };
 
+type User = {
+    password?: string,
+    wechatId: string,
+    qqNum: number,
+    phoneNum: string, // node-sqlite3在进行sql转义后，较大的数的长度始终无法匹配数据CHECK约束，改为字符串可解决
+    wechatQRCodeUrl: string
+} & UserBriefInfo;
+
 const objectToDataMap = {
-    id: 'uid',
+    userId: 'uid',
     password: 'upassword',
     name: 'uname',
     wechatQRCodeUrl: 'wechat_qrcode_url',
@@ -31,6 +34,15 @@ const objectToDataMap = {
     genderCode: 'gid',
     regionCode: 'rid'
 };
+
+// export function getUser(userId: number): Promise<User> {
+//     const sqlStr = 'SELECT * FROM users WHERE uid = ?';
+//     return executeQuery(sqlStr, [userId]).then(rows => {
+//         let user = <User>mapKeys(rows[0], objectToDataMap, true);
+//         delete user.password;
+//         return user;
+//     });
+// }
 
 export function addNewUser(newUser: Partial<User>): Promise<void> {
     const userData = mapKeys(newUser, objectToDataMap);
@@ -67,7 +79,7 @@ passport.use(new passportLocal.Strategy({ usernameField: 'name' }, (username, pa
         }
         const user = <User>mapKeys(result[0], objectToDataMap, true);
         if (user && (user.password === password)) {
-            user.password = undefined; // 前端不应拿到用户密码
+            delete user.password; // 前端不应拿到用户密码
             done(null, user);
         } else {
             done(null, false, { message: 'Wrong password or username!' });
@@ -78,7 +90,7 @@ passport.use(new passportLocal.Strategy({ usernameField: 'name' }, (username, pa
 }));
 
 passport.serializeUser((user: Partial<User>, done) => {
-    done(null, user.id);
+    done(null, user.userId);
 });
 
 passport.deserializeUser((id: number, done) => {

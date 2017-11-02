@@ -7,9 +7,10 @@ import fetchCostOptions from './services/costOptions';
 import fetchIdentities from './services/identities';
 import fetchGenders from './services/genders';
 import fetchTags from './services/tags';
-import { addNewPost, getLatestPosts, modifyPost } from './services/posts';
+import { addNewPost, getLatestPosts, modifyPost, getPost, closePost } from './services/posts';
 import { addNewUser, configuredPassport, modifyUserInfo, modifyAvatar, modifyQRCode } from './services/users';
-import { addNewRequest } from './services/requests';
+import { addNewRequest, getOwnRequests, getOthersRequests } from './services/requests';
+import { addNewComment, deleteComment, getComments } from './services/comments';
 
 const app = express();
 
@@ -20,7 +21,7 @@ app.use(configuredPassport.session());
 
 const permittedOrigin = 'http://localhost:3000';
 
-function respondGet(asyncData: Promise<{} | Array<any>>, res: Response) {
+function respondDataFetch(asyncData: Promise<{} | Array<any>>, res: Response) {
     asyncData.then(data => {
         res.setHeader('Access-Control-Allow-Origin', permittedOrigin);
         res.send(data);
@@ -29,7 +30,7 @@ function respondGet(asyncData: Promise<{} | Array<any>>, res: Response) {
     });
 }
 
-function respondWithoutData(asyncResult: Promise<any>, res: Response) {
+function respondAction(asyncResult: Promise<any>, res: Response) {
     asyncResult.then(() => {
         res.sendStatus(200);
     }).catch(err => {
@@ -47,41 +48,46 @@ app.get('/', (req, res) => {
 });
 
 app.get('/regions', (req, res) => {
-    respondGet(fetchRegions(), res);
+    respondDataFetch(fetchRegions(), res);
 });
 
 app.get('/costOptions', (req, res) => {
-    respondGet(fetchCostOptions(), res);
+    respondDataFetch(fetchCostOptions(), res);
 });
 
 app.get('/identities', (req, res) => {
-    respondGet(fetchIdentities(), res);
+    respondDataFetch(fetchIdentities(), res);
 });
 
 app.get('/genders', (req, res) => {
-    respondGet(fetchGenders(), res);
+    respondDataFetch(fetchGenders(), res);
 });
 
 app.get('/tags', (req, res) => {
-    respondGet(fetchTags(), res);
+    respondDataFetch(fetchTags(), res);
 });
 
+// app.get('/users/:userId', (req, res) => {
+//     let { userId } = req.params;
+//     respondDataFetch(getUser(+userId), res);
+// });
+
 app.post('/users', (req, res) => {
-    respondWithoutData(addNewUser(req.body), res);
+    respondAction(addNewUser(req.body), res);
 });
 
 app.put('/users', (req, res) => {
-    respondWithoutData(modifyUserInfo(req.body), res);
+    respondAction(modifyUserInfo(req.body), res);
 });
 
 app.put('/users/avatars', (req, res) => {
     const { id, imageData } = req.body;
-    respondWithoutData(modifyAvatar(id, imageData), res);
+    respondAction(modifyAvatar(id, imageData), res);
 });
 
 app.put('/users/qrcodes', (req, res) => {
     const { id, imageData } = req.body;
-    respondWithoutData(modifyQRCode(id, imageData), res);
+    respondAction(modifyQRCode(id, imageData), res);
 });
 
 app.post('/login', configuredPassport.authenticate('local'), (req, res) => {
@@ -97,19 +103,53 @@ app.get('/posts', (req, res) => {
     let { pageNum, pageSize } = req.query;  // query中的是字符串
     pageNum = Number(pageNum);
     pageSize = Number(pageSize);
-    respondGet(getLatestPosts(pageNum, pageSize), res);
+    respondDataFetch(getLatestPosts(pageNum, pageSize), res);
+});
+
+app.get('/posts/:postId', (req, res) => {
+    let { postId } = req.params;
+    respondDataFetch(getPost(+postId), res);
+});
+
+app.delete('/posts/:postId', (req, res) => {
+    let { postId } = req.params;
+    respondAction(closePost(+postId), res);
 });
 
 app.post('/posts', (req, res) => {
-    respondWithoutData(addNewPost(req.body), res);
+    respondAction(addNewPost(req.body), res);
 });
 
 app.put('/posts', (req, res) => {
-    respondWithoutData(modifyPost(req.body), res);
+    respondAction(modifyPost(req.body), res);
 });
 
 app.post('/requests', (req, res) => {
-    respondWithoutData(addNewRequest(req.body), res);
+    respondAction(addNewRequest(req.body), res);
+});
+
+app.get('/requests/own/:requesterId', (req, res) => {
+    let { requesterId } = req.params;
+    respondDataFetch(getOwnRequests(+requesterId), res);
+});
+
+app.get('/requests/others/:userId', (req, res) => {
+    let { userId } = req.params;
+    respondDataFetch(getOthersRequests(+userId), res);
+});
+
+app.post('/comments', (req, res) => {
+    respondAction(addNewComment(req.body), res);
+});
+
+app.get('/comments/:albumId', (req, res) => {
+    let { albumId } = req.params;
+    respondDataFetch(getComments(+albumId), res);
+});
+
+app.delete('/comments/:albumId', (req, res) => {
+    let { albumId } = req.params;
+    respondAction(deleteComment(+albumId), res);
 });
 
 const server = app.listen(8080, () => {
