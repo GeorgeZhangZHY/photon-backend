@@ -1,6 +1,8 @@
 import { executeQuery, insertData, updateData, deleteData } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
-import { convertDataToImage, deleteImage, diffImageUrls, getMaxImageOrdinal } from '../utils/imageUtils';
+import { convertDataToImage, deleteImage } from '../utils/imageUtils';
+import { updateTags } from './tags';
+import { updatePhotoUrls } from './photoUrls';
 
 type NewPost = {
     ownerId: number,
@@ -64,7 +66,6 @@ function getPostTagsAndUrls(partialPostData: { pid: number } & any) {
 
 // 需要将帖子本身的内容、帖子的图片、帖子的标签分别存到不同的表
 export function addNewPost(newPost: NewPost) {
-
     return executeQuery('SELECT max(pid) as max FROM posts').then(rows => {
         const pid: number = rows[0].max + 1;
         // 转存多值属性至独立的表
@@ -75,38 +76,16 @@ export function addNewPost(newPost: NewPost) {
         const newPostData = mapKeys(newPost, objectToDataMap);
 
         return insertData('posts', newPostData).then(() => {
-
             let insertTags, insertPhotoUrls;
-
             if (tagCodes.length > 0) {
-                let postTagsData = tagCodes.map(tagCode => ({
-                    pid,
-                    tagid: tagCode
-                }));
-                insertTags = Promise.all(postTagsData.map(tag => insertData('post_tags', tag)));
+                insertTags = updateTags('post_tags', tagCodes, 'pid', pid);
             }
-
             if (photoUrls.length > 0) {
-                let postPhotoUrlsData: {}[] = [];
-                insertPhotoUrls = Promise.all(photoUrls.map((dataUrl, index) =>
-                    // 读取所有图片    
-                    savePostPhoto(pid, dataUrl, index).then(path => {
-                        postPhotoUrlsData.push({
-                            pid,
-                            photo_url: path
-                        });
-                    })
-                )).then(() => {
-                    // 更新数据库表
-                    return Promise.all(postPhotoUrlsData.map(photoUrl => insertData('post_photo_urls', photoUrl)));
-                });
+                insertPhotoUrls = updatePhotoUrls('post_photo_urls', photoUrls, 'pid', pid, savePostPhoto);
             }
-
-            return Promise.all([<Promise<void[]>>insertTags, <Promise<void[]>>insertPhotoUrls]);
+            return Promise.all([<Promise<void[]>>insertTags, <Promise<[void[], void[]]>>insertPhotoUrls]);
         });
-
     });
-
 }
 
 export function getPost(postId: number): Promise<Post> {
@@ -119,12 +98,11 @@ export function getPost(postId: number): Promise<Post> {
     return executeQuery(sqlStr, [postId])
         .then(rows =>
             getPostTagsAndUrls(rows[0])
-            .then(() => <Post>mapKeys(rows[0], objectToDataMap, true)));
+                .then(() => <Post>mapKeys(rows[0], objectToDataMap, true)));
 }
 
 // pageNum从0开始
 export function getLatestPosts(pageNum: number, pageSize: number): Promise<Post[]> {
-
     let dataList: any[];
     // 获取非多值信息
     const mainSqlStr = `SELECT p.*, t.tname, t.cover_url, u.uname, u.iid, u.gid, ifnull(r.rnum, 0) as rnum
@@ -154,7 +132,7 @@ export function modifyPost(modifiedPost: Post) {
     delete modifiedPost.photoUrls;
     delete modifiedPost.tagCodes;
 
-    // 删除其他非post表的属性
+    // 删除其他非posts表的属性
     delete modifiedPost.ownerGenderCode;
     delete modifiedPost.ownerIdentityCode;
     delete modifiedPost.ownerName;
@@ -163,36 +141,11 @@ export function modifyPost(modifiedPost: Post) {
     delete modifiedPost.requestNum;
 
     // 更新标签
-    const postTagsData = tagCodes.map(tagCode => ({
-        pid,
-        tagid: tagCode
-    }));
-    const updateTags = deleteData('post_tags', { pid }).then(() =>
-        Promise.all(postTagsData.map(tag => insertData('post_tags', tag)))
-    );
-
+    const modifyTags = updateTags('post_tags', tagCodes, 'pid', pid);
     // 更新图片
-    const updatePhotos = executeQuery('SELECT photo_url as photoUrl FROM post_photo_urls WHERE pid = ?', [pid])
-        .then(rows => {
-            let oldUrls: string[] = (<any[]>rows).map(row => row.photoUrl);
-            const maxOldIndex = getMaxImageOrdinal(oldUrls);
-            const { dataUrlsToAdd, urlsToDelete } = diffImageUrls(oldUrls, photoUrls);
-            const deleteUnwanted = Promise.all(urlsToDelete.map(url => deleteImage(url).then(() =>
-                deleteData('post_photo_urls', { pid, photo_url: url })
-            )));
-            const addNew = Promise.all(dataUrlsToAdd.map(
-                (dataUrl, index) => savePostPhoto(pid, dataUrl, maxOldIndex + index + 1).then(newUrl =>
-                    insertData('post_photo_urls', {
-                        pid,
-                        photo_url: newUrl
-                    })
-                )
-            ));
-            return Promise.all([deleteUnwanted, addNew]);
-        });
-
+    const updatePhotos = updatePhotoUrls('post_photo_urls', photoUrls, 'pid', pid, savePostPhoto);
     // 更新单值属性
-    return Promise.all([updateTags, updatePhotos]).then(() => {
+    return Promise.all([modifyTags, updatePhotos]).then(() => {
         const modifiedPostData = mapKeys(modifiedPost, objectToDataMap);
         return updateData('posts', 'pid', modifiedPostData);
     });
