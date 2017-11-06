@@ -2,11 +2,11 @@ import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import { Response } from 'express';
 import { expressSessionHandler } from './utils/sessionUtils';
-import fetchRegions from './services/regions';
-import fetchCostOptions from './services/costOptions';
-import fetchIdentities from './services/identities';
-import fetchGenders from './services/genders';
-import fetchTags from './services/tags';
+import fetchAllRegions from './services/regions';
+import fetchAllCostOptions from './services/costOptions';
+import fetchAllIdentities from './services/identities';
+import fetchAllGenders from './services/genders';
+import fetchAllTags from './services/tags';
 import { addNewPost, getLatestPosts, modifyPost, getPost, closePost } from './services/posts';
 import { addNewUser, configuredPassport, modifyUserInfo, modifyAvatar, modifyQRCode } from './services/users';
 import { addNewRequest, getOwnRequests, getOthersRequests } from './services/requests';
@@ -48,23 +48,23 @@ app.get('/', (req, res) => {
 });
 
 app.get('/regions', (req, res) => {
-    respondDataFetch(fetchRegions(), res);
+    respondDataFetch(fetchAllRegions(), res);
 });
 
 app.get('/costOptions', (req, res) => {
-    respondDataFetch(fetchCostOptions(), res);
+    respondDataFetch(fetchAllCostOptions(), res);
 });
 
 app.get('/identities', (req, res) => {
-    respondDataFetch(fetchIdentities(), res);
+    respondDataFetch(fetchAllIdentities(), res);
 });
 
 app.get('/genders', (req, res) => {
-    respondDataFetch(fetchGenders(), res);
+    respondDataFetch(fetchAllGenders(), res);
 });
 
 app.get('/tags', (req, res) => {
-    respondDataFetch(fetchTags(), res);
+    respondDataFetch(fetchAllTags(), res);
 });
 
 // app.get('/users/:userId', (req, res) => {

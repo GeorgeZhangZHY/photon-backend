@@ -1,8 +1,8 @@
-import { executeQuery, insertData, updateData, deleteData } from '../utils/sqliteUtils';
+import { executeQuery, insertData, updateData } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
-import { convertDataToImage, deleteImage } from '../utils/imageUtils';
-import { updateTags } from './tags';
-import { updatePhotoUrls } from './photoUrls';
+import { convertDataToImage } from '../utils/imageUtils';
+import { updateTags, getTags } from './tags';
+import { updatePhotoUrls, getPhotoUrls } from './photoUrls';
 
 type NewPost = {
     ownerId: number,
@@ -55,12 +55,14 @@ function savePostPhoto(postId: number, dataUrl: string, photoIndex: number): Pro
 // 根据已有的帖子信息获取其标签和图片，并将结果附加到传入的对象上
 function getPostTagsAndUrls(partialPostData: { pid: number } & any) {
     return Promise.all([
-        executeQuery('SELECT tagid FROM post_tags WHERE pid = ?', [partialPostData.pid]).then(tags => {
-            partialPostData.tagids = (<any[]>tags).map(tag => tag.tagid);
-        }), // 获取帖子对应的所有标签
-        executeQuery('SELECT photo_url FROM post_photo_urls WHERE pid = ?', [partialPostData.pid]).then(photoUrls => {
-            partialPostData.photo_urls = (<any[]>photoUrls).map(url => url.photo_url);
-        })  // 获取帖子的图片
+        // 获取帖子对应的所有标签
+        getTags('post_tags', 'pid', partialPostData.pid).then(tagIds => {
+            partialPostData.tagids = tagIds;
+        }),
+        // 获取帖子的图片
+        getPhotoUrls('post_photo_url', 'pid', partialPostData.pid).then(photoUrls => {
+            partialPostData.photo_urls = photoUrls;
+        })
     ]);
 }
 
@@ -96,9 +98,8 @@ export function getPost(postId: number): Promise<Post> {
                         GROUP BY pid ) r ON p.pid = r.pid
                     WHERE p.pid = ?`;
     return executeQuery(sqlStr, [postId])
-        .then(rows =>
-            getPostTagsAndUrls(rows[0])
-                .then(() => <Post>mapKeys(rows[0], objectToDataMap, true)));
+        .then(rows => getPostTagsAndUrls(rows[0])
+        .then(() => <Post>mapKeys(rows[0], objectToDataMap, true)));
 }
 
 // pageNum从0开始
@@ -114,6 +115,7 @@ export function getLatestPosts(pageNum: number, pageSize: number): Promise<Post[
                         ORDER BY p.launch_time DESC LIMIT ? OFFSET ?`;
 
     return executeQuery(mainSqlStr, [pageSize, pageNum * pageSize]).then(rows => {
+        // 获取多值信息
         dataList = <any[]>rows;
         return Promise.all(dataList.map(row => getPostTagsAndUrls(row)));
     }).then(() => <Post[]>dataList.map(data => mapKeys(data, objectToDataMap, true)));

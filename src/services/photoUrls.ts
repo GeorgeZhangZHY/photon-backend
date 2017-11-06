@@ -49,3 +49,14 @@ export function updatePhotoUrls(tableName: string,
             return Promise.all([deleteUnwanted, addNew]);
         });
 }
+
+/**
+ * 获得某个表中某个id下所对应的所有图片Url
+ * @param tableName 表名
+ * @param keyName id名，如'pid','aid'
+ * @param keyValue id值
+ */
+export function getPhotoUrls(tableName: string, keyName: string, keyValue: number): Promise<string[]> {
+    return executeQuery(`SELECT photo_url FROM ${tableName} WHERE ${keyName} = ?`, [keyValue])
+        .then(rows => (<any[]>rows).map(row => <string>row.photo_url));
+}

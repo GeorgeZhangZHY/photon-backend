@@ -35,14 +35,13 @@ const objectToDataMap = {
     regionCode: 'rid'
 };
 
-// export function getUser(userId: number): Promise<User> {
-//     const sqlStr = 'SELECT * FROM users WHERE uid = ?';
-//     return executeQuery(sqlStr, [userId]).then(rows => {
-//         let user = <User>mapKeys(rows[0], objectToDataMap, true);
-//         delete user.password;
-//         return user;
-//     });
-// }
+export function getUserBriefInfo(userId: number): Promise<UserBriefInfo> {
+    const sqlStr = 'SELECT uid, iid, gid, rid, uname, avatar_url FROM users WHERE uid = ?';
+    return executeQuery(sqlStr, [userId]).then(rows => {
+        let user = <UserBriefInfo>mapKeys(rows[0], objectToDataMap, true);
+        return user;
+    });
+}
 
 export function addNewUser(newUser: Partial<User>): Promise<void> {
     const userData = mapKeys(newUser, objectToDataMap);
@@ -68,6 +67,28 @@ export function modifyQRCode(id: number, newQRCodeDataUrl: string): Promise<void
     return <Promise<void>>convertDataToImage(newQRCodeDataUrl, path).then(() => {
         const sqlStr = 'UPDATE users SET wechat_qrcode_url = ? WHERE uid = ?';
         return executeQuery(sqlStr, [path, id]);
+    });
+}
+
+// 获得关注某个用户的所有用户
+export function getFollowers(userId: number, pageNum: number, pageSize: number): Promise<UserBriefInfo[]> {
+    const sqlStr = `SELECT follower_id as id
+                    FROM follows
+                    WHERE uid = ?
+                    ORDER BY create_time DESC LIMIT ? OFFSET ?`;
+    return executeQuery(sqlStr, [userId, pageSize, pageNum * pageSize]).then(rows => {
+        return Promise.all((<any[]>rows).map(row => getUserBriefInfo(row.id)));
+    });
+}
+
+// 获得某用户关注的所有用户
+export function getFollowedUsers(userId: number, pageNum: number, pageSize: number): Promise<UserBriefInfo[]> {
+    const sqlStr = `SELECT uid as id
+                    FROM follows
+                    WHERE follower_id = ?
+                    ORDER BY create_time DESC LIMIT ? OFFSET ?`;
+    return executeQuery(sqlStr, [userId, pageSize, pageNum * pageSize]).then(rows => {
+        return Promise.all((<any[]>rows).map(row => getUserBriefInfo(row.id)));
     });
 }
 

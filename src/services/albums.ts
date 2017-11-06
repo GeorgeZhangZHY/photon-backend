@@ -1,8 +1,8 @@
 import { insertData, executeQuery, updateData } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
 import { convertDataToImage } from '../utils/imageUtils';
-import { updateTags } from './tags';
-import { updatePhotoUrls } from './photoUrls';
+import { updateTags, getTags } from './tags';
+import { updatePhotoUrls, getPhotoUrls } from './photoUrls';
 
 type NewAlbum = {
     themeId?: number,
@@ -19,6 +19,7 @@ type NewAlbum = {
 
 type Album = {
     albumId: number,
+    createTime: string,
     themeName?: string,
     themeCoverUrl?: string
 } & NewAlbum;
@@ -36,12 +37,38 @@ const objectToDataMap = {
     description: 'description',
     photoUrls: 'photo_urls',
     tagCodes: 'tagids',
-    coverOrdinal: 'cover_ordinal'
+    coverOrdinal: 'cover_ordinal',
+    createTime: 'create_time'
 };
 
 function saveAlbumPhoto(albumId: number, dataUrl: string, photoIndex: number): Promise<string> {
     const path = `./public/albumPhotos/a${albumId}-${photoIndex}.png`;
     return convertDataToImage(dataUrl, path).then(() => path);
+}
+
+// 根据已有的相册信息获取其标签和图片，并将结果附加到传入的对象上
+function getAlbumTagsAndUrls(partialAlbumData: { aid: number } & any) {
+    return Promise.all([
+        getTags('album_tags', 'aid', partialAlbumData.aid).then(tagIds => {
+            partialAlbumData.tagids = tagIds;
+        }),
+        getPhotoUrls('album_photo_urls', 'aid', partialAlbumData.aid).then(photoUrls => {
+            partialAlbumData.photo_urls = photoUrls;
+        })
+    ]);
+}
+
+export function getAlbum(albumId: number): Promise<Album> {
+    // 单值属性
+    const mainSqlStr = `SELECT a.*, t.tname, t.cover_url
+                        FROM albums a LEFT JOIN themes t ON a.tid = t.tid
+                        WHERE a.aid = ?`;
+    let data: any;
+    return executeQuery(mainSqlStr, [albumId]).then(rows => {
+        // 获取多值属性
+        data = rows[0];
+        return getAlbumTagsAndUrls(data);
+    }).then(() => <Album>mapKeys(data, objectToDataMap, true));
 }
 
 export function addNewAlbum(newAlbum: NewAlbum) {
@@ -91,5 +118,20 @@ export function modifyAlbum(modifiedAlbum: Album) {
 
 // pageNum从0开始
 export function getLatestAlbums(pageNum: number, pageSize: number): Promise<Album[]> {
-    const sqlStr=``
+    const sqlStr = `SELECT aid
+                    FROM albums
+                    ORDER BY create_time DESC LIMIT ? OFFSET ?`;
+    return executeQuery(sqlStr, [pageSize, pageNum * pageSize]).then(rows => {
+        return Promise.all((<any[]>rows).map(row => getAlbum(row.aid)));
+    });
+}
+
+export function getLikedAlbums(userId: number, pageNum: number, pageSize: number): Promise<Album[]> {
+    const sqlStr = `SELECT aid
+                    FROM likes
+                    WHERE uid = ?
+                    ORDER BY create_time DESC LIMIT ? OFFSET ?`;
+    return executeQuery(sqlStr, [userId, pageSize, pageNum * pageSize]).then(rows => {
+        return Promise.all((<any[]>rows).map(row => getAlbum(row.aid)));
+    });
 }
