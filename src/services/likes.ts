@@ -36,3 +36,20 @@ export function getLikesOfAlbum(albumId: number): Promise<Like[]> {
 export function cancelLike(userId: number, albumId: number) {
     return deleteData('likes', { uid: userId, aid: albumId });
 }
+
+/**
+ * 
+ * @param userId 相册主人的id
+ */
+export function getUnreadLikes(userId: number): Promise<Like[]> {
+    // todo
+}
+
+/**
+ * 
+ * @param userId 点喜欢的用户id
+ * @param albumId 
+ */
+export function setLikeRead(userId: number, albumId: number) {
+    // todo
+}

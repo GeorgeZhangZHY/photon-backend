@@ -112,7 +112,7 @@ export function modifyAlbum(modifiedAlbum: Album) {
     // 更新单值属性
     return Promise.all([modifyTags, updatePhotos]).then(() => {
         const modifiedAlbumData = mapKeys(modifiedAlbum, objectToDataMap);
-        return updateData('albums', 'aid', modifiedAlbumData);
+        return updateData('albums', ['aid'], modifiedAlbumData);
     });
 }
 

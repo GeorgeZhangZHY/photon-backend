@@ -62,6 +62,6 @@ export function getUnreadComments(userId: number): Promise<CommentNotification[]
         .then(rows => (<any[]>rows).map(row => <CommentNotification>mapKeys(row, objectToDataMap, true)));
 }
 
-export function setCommentHasRead(commentId: number) {
-    return updateData('comments', 'cid', { cid: commentId, has_read: 1 });
+export function setCommentRead(commentId: number) {
+    return updateData('comments', ['cid'], { cid: commentId, has_read: 1 });
 }

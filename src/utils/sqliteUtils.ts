@@ -18,13 +18,18 @@ const queryMethods = {
     insert: database.run.bind(database)
 };
 
-// dataObject中名为primaryKeyName的属性将作为更新所依据的主键
-export function updateData(tableName: string, primaryKeyName: string, dataObject: {}) {
+/**
+ * 以单一属性作为主键，更新数据库中的数据
+ * @param tableName 要更新的表名
+ * @param primaryKeyNames 主键名数组，用于唯一标识某条数据
+ * @param dataObject 更新数据，其中含有主键及其值
+ */
+export function updateData(tableName: string, primaryKeyNames: string[], dataObject: {}) {
     const { keys, values } = getKeysAndValues(dataObject);
-    values.push(dataObject[primaryKeyName]);
+    values.push(primaryKeyNames.map(keyName => dataObject[keyName]));
     const sqlStr = `UPDATE ${tableName} 
                     SET ${keys.map(key => key + ' = ?').join(', ')} 
-                    WHERE ${primaryKeyName} = ?`;  // 该库‘=’前不可以用占位符
+                    WHERE ${primaryKeyNames.map(name => name + ' = ?').join(' AND ')}`;  // 该库‘=’前不可以用占位符
     return <Promise<void>>executeQuery(sqlStr, values);
 }
 

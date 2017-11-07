@@ -1,5 +1,5 @@
 import { UserBriefInfo } from './users';
-import { insertData, executeQuery, deleteData } from '../utils/sqliteUtils';
+import { insertData, executeQuery, updateData } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
 
 type NewParticipate = {
@@ -45,7 +45,54 @@ export function getParticipants(albumId: number): Promise<UserBriefInfo[]> {
 
 /**
  * 获得一个用户接收到的请求添加参与者的请求
+ * @param userId 主人的id
  */
-export function getParticipateRequests(userId: number): Promise<ParticipateNotification> {
-    const sqlStr = ``
+export function getParticipateRequests(userId: number): Promise<ParticipateNotification[]> {
+    const sqlStr = `SELECT p.*, a.aname, u.uname, u.avatar_url, u.iid, u.rid, u.gid 
+                    FROM participates p
+                    JOIN albums a ON p.aid = a.aid
+                    JOIN users u ON p.uid = u.uid
+                    WHERE a.uid = ? AND p.status = 'pending'`; // 其中的用户信息是申请者的
+    return executeQuery(sqlStr, [userId])
+        .then(rows => (<any[]>rows).map(row => <ParticipateNotification>mapKeys(row, objectToDataMap, true)));
+}
+
+/**
+ * 主人同意或拒绝将某人添加为某相册的参与者
+ * @param userId 申请者的id
+ */
+export function resolveParticipate(albumId: number, userId: number, agreed: boolean) {
+    const data = {
+        aid: albumId,
+        uid: userId,
+        status: agreed ? 'agreed' : 'rejected'
+    };
+    return updateData('participates', ['aid', 'uid'], data);
+}
+
+/**
+ * 用户获得主人处理申请的结果
+ * @param userId 申请者的id
+ */
+export function getParticipateResults(userId: number): Promise<ParticipateNotification[]> {
+    const sqlStr = `SELECT p.status, p.create_time, p.aid, a.aname, u.uid, u.uname, u.avatar_url, u.iid, u.rid, u.gid
+                    FROM participates p
+                    JOIN albums a ON p.aid = a.aid
+                    JOIN users u ON a.uid = u.uid
+                    WHERE p.uid = ? AND (p.status = 'rejected' OR p.status = 'agreed')`; // 其中的用户信息是主人的
+    return executeQuery(sqlStr, [userId])
+        .then(rows => (<any[]>rows).map(row => <ParticipateNotification>mapKeys(row, objectToDataMap, true)));
+}
+
+export function setResultRead(albumId: number, userId: number, prevStatus: 'agreed' | 'rejected') {
+    const nextStatus = {
+        agreed: 'succeeded',
+        rejected: 'failed'
+    };
+    const data = {
+        aid: albumId,
+        uid: userId,
+        status: nextStatus[prevStatus]
+    };
+    return updateData('participates', ['aid', 'uid'], data);
 }

@@ -51,7 +51,7 @@ export function addNewUser(newUser: Partial<User>): Promise<void> {
 // 修改除了头像和二维码之外的信息
 export function modifyUserInfo(modifiedUser: User): Promise<void> {
     const modifiedUserData = mapKeys(modifiedUser, objectToDataMap);
-    return updateData('users', 'uid', modifiedUserData);
+    return updateData('users', ['uid'], modifiedUserData);
 }
 
 export function modifyAvatar(id: number, newAvatarDataUrl: string): Promise<void> {

@@ -58,12 +58,35 @@ export function getOwnRequests(userId: number): Promise<OwnRequest[]> {
     );
 }
 
-// 获得他人向该用户发起的约拍请求
-export function getOthersRequests(userId: number): Promise<OthersRequest[]> {
+/**
+ * 获得他人向该用户发起的所有约拍请求，含已读的和未读的 
+ */
+export function getOthersRequests(userId: number, pageNum: number, pageSize: number): Promise<OthersRequest[]> {
     const sqlStr = `SELECT r.*, u.gid, u.iid, u.uname, u.phone_num, u.qq_num, 
                         u.wechat_id, u.wechat_qrcode_url, u.avatar_url
                     FROM users u, requests r, posts p
-                    WHERE p.uid = ? AND p.pid = r.pid AND r.uid = u.uid`;
+                    WHERE p.uid = ? AND p.pid = r.pid AND r.uid = u.uid
+                    ORDER BY request_time DESC LIMIT ? OFFSET ?`;
+    return executeQuery(sqlStr, [userId, pageSize, pageNum * pageSize])
+        .then(rows => (<any[]>rows).map(row => <OthersRequest>mapKeys(row, objectToDataMap, true)));
+}
+
+/**
+ * 获得他人向该用户发起的未读的约拍请求
+ */
+export function getUnreadOthersRequests(userId: number): Promise<OthersRequest[]> {
+    const sqlStr = `SELECT r.*, u.gid, u.iid, u.uname, u.phone_num, u.qq_num, 
+                        u.wechat_id, u.wechat_qrcode_url, u.avatar_url
+                    FROM users u, requests r, posts p
+                    WHERE p.uid = ? AND p.pid = r.pid AND r.uid = u.uid AND r.has_read = 0
+                    ORDER BY request_time DESC`;
     return executeQuery(sqlStr, [userId])
         .then(rows => (<any[]>rows).map(row => <OthersRequest>mapKeys(row, objectToDataMap, true)));
+}
+
+export function setRequestRead(userId: number, postId: number) {
+    const sqlStr = `UPDATE requests
+                    SET has_read = 1
+                    WHERE uid = ? AND pid = ?`;
+    return <Promise<void>>executeQuery(sqlStr, [userId, postId]);
 }
