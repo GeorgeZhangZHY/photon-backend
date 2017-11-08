@@ -1,6 +1,7 @@
 import { UserBriefInfo } from './users';
 import { insertData, executeQuery, updateData } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
+import { globalMap } from '../config/globalMap';
 
 type NewParticipate = {
     albumId: number,
@@ -13,18 +14,7 @@ type ParticipateNotification = NewParticipate & UserBriefInfo & {
     createTime: string
 };
 
-const objectToDataMap = {
-    albumName: 'aname',
-    albumId: 'aid',
-    userId: 'uid',
-    avatarUrl: 'avatar_url',
-    identityCode: 'iid',
-    genderCode: 'gid',
-    regionCode: 'rid',
-    userName: 'uname',
-    status: 'status',
-    createTime: 'create_time'
-};
+const objectToDataMap = globalMap;
 
 /**
  * 其他用户在相册下请求主人将自己添加为参与者
@@ -37,7 +27,7 @@ export function addNewParticipateRequest(newParticipate: NewParticipate) {
 export function getParticipants(albumId: number): Promise<UserBriefInfo[]> {
     const sqlStr = `SELECT u.uname, u.avatar_url, u.uid, u.iid, u.gid, u.rid
                     FROM participates p JOIN users u ON p.uid = u.uid
-                    WHERE p.aid = ? AND p.status = 'confirmed'
+                    WHERE p.aid = ? AND (p.status = 'agreed' OR p.status = 'succeeded')
                     ORDER BY p.create_time ASC`;
     return executeQuery(sqlStr, [albumId])
         .then(rows => (<any[]>rows).map(row => <UserBriefInfo>mapKeys(row, objectToDataMap, true)));
@@ -72,19 +62,19 @@ export function resolveParticipate(albumId: number, userId: number, agreed: bool
 
 /**
  * 用户获得主人处理申请的结果
- * @param userId 申请者的id
+ * @param requesterId 申请者的id
  */
-export function getParticipateResults(userId: number): Promise<ParticipateNotification[]> {
+export function getParticipateResults(requesterId: number): Promise<ParticipateNotification[]> {
     const sqlStr = `SELECT p.status, p.create_time, p.aid, a.aname, u.uid, u.uname, u.avatar_url, u.iid, u.rid, u.gid
                     FROM participates p
                     JOIN albums a ON p.aid = a.aid
                     JOIN users u ON a.uid = u.uid
                     WHERE p.uid = ? AND (p.status = 'rejected' OR p.status = 'agreed')`; // 其中的用户信息是主人的
-    return executeQuery(sqlStr, [userId])
+    return executeQuery(sqlStr, [requesterId])
         .then(rows => (<any[]>rows).map(row => <ParticipateNotification>mapKeys(row, objectToDataMap, true)));
 }
 
-export function setResultRead(albumId: number, userId: number, prevStatus: 'agreed' | 'rejected') {
+export function setParticipateResultRead(albumId: number, userId: number, prevStatus: 'agreed' | 'rejected') {
     const nextStatus = {
         agreed: 'succeeded',
         rejected: 'failed'

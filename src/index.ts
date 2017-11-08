@@ -8,9 +8,22 @@ import fetchAllIdentities from './services/identities';
 import fetchAllGenders from './services/genders';
 import fetchAllTags from './services/tags';
 import { addNewPost, getLatestPosts, modifyPost, getPost, closePost } from './services/posts';
-import { addNewUser, configuredPassport, modifyUserInfo, modifyAvatar, modifyQRCode } from './services/users';
-import { addNewRequest, getOwnRequests, getOthersRequests } from './services/requests';
-import { addNewComment, deleteComment, getComments } from './services/comments';
+import {
+    addNewUser, configuredPassport, modifyUserInfo, modifyAvatar, modifyQRCode, getUserBriefInfo
+} from './services/users';
+import { addNewComment, deleteComment, getComments, getUnreadComments, setCommentRead } from './services/comments';
+import { addNewLike, cancelLike, getLikesOfAlbum, getUnreadLikes, setLikeRead } from './services/likes';
+import {
+    addNewRequest, getOthersRequests, getOwnRequests, getUnreadOthersRequests, setRequestRead
+} from './services/requests';
+import {
+    addNewFollow, cancelFollow, getFollowedUsers, getFollowers, getUnreadFollows, setFollowRead
+} from './services/follows';
+import { addNewAlbum, getLatestAlbums, getLikedAlbums, modifyAlbum, getUserAlbums } from './services/albums';
+import {
+    addNewParticipateRequest, getParticipants, getParticipateRequests,
+    getParticipateResults, resolveParticipate, setParticipateResultRead
+} from './services/participates';
 
 const app = express();
 
@@ -67,10 +80,10 @@ app.get('/tags', (req, res) => {
     respondDataFetch(fetchAllTags(), res);
 });
 
-// app.get('/users/:userId', (req, res) => {
-//     let { userId } = req.params;
-//     respondDataFetch(getUser(+userId), res);
-// });
+app.get('/users/:userId', (req, res) => {
+    let { userId } = req.params;
+    respondDataFetch(getUserBriefInfo(+userId), res);
+});
 
 app.post('/users', (req, res) => {
     respondAction(addNewUser(req.body), res);
@@ -101,13 +114,11 @@ app.get('/logout', (req, res) => {
 
 app.get('/posts', (req, res) => {
     let { pageNum, pageSize } = req.query;  // query中的是字符串
-    pageNum = Number(pageNum);
-    pageSize = Number(pageSize);
-    respondDataFetch(getLatestPosts(pageNum, pageSize), res);
+    respondDataFetch(getLatestPosts(+pageNum, +pageSize), res);
 });
 
 app.get('/posts/:postId', (req, res) => {
-    let { postId } = req.params;
+    let { postId } = req.params;    // params中的值是字符串
     respondDataFetch(getPost(+postId), res);
 });
 
@@ -133,9 +144,20 @@ app.get('/requests/own/:requesterId', (req, res) => {
     respondDataFetch(getOwnRequests(+requesterId), res);
 });
 
-app.get('/requests/others/:userId', (req, res) => {
+app.get('/requests/others/all/:userId', (req, res) => {
     let { userId } = req.params;
-    respondDataFetch(getOthersRequests(+userId), res);
+    let { pageNum, pageSize } = req.query;
+    respondDataFetch(getOthersRequests(+userId, +pageNum, +pageSize), res);
+});
+
+app.get('/requests/others/unread/:userId', (req, res) => {
+    let { userId } = req.params;
+    respondDataFetch(getUnreadOthersRequests(+userId), res);
+});
+
+app.put('/requests/others/read', (req, res) => {
+    let { userId, postId } = req.query;
+    respondAction(setRequestRead(+userId, +postId), res);
 });
 
 app.post('/comments', (req, res) => {
@@ -150,6 +172,122 @@ app.get('/comments/:albumId', (req, res) => {
 app.delete('/comments/:albumId', (req, res) => {
     let { albumId } = req.params;
     respondAction(deleteComment(+albumId), res);
+});
+
+app.get('/comments/unread/:userId', (req, res) => {
+    let { userId } = req.params;
+    respondDataFetch(getUnreadComments(+userId), res);
+});
+
+app.put('/comments/read/:commentId', (req, res) => {
+    let { commentId } = req.params;
+    respondAction(setCommentRead(+commentId), res);
+});
+
+app.get('/likes/album/:albumId', (req, res) => {
+    let { albumId } = req.params;
+    respondDataFetch(getLikesOfAlbum(+albumId), res);
+});
+
+app.get('/likes/unread/:userId', (req, res) => {
+    let { userId } = req.params;
+    respondDataFetch(getUnreadLikes(+userId), res);
+});
+
+app.put('/likes/read', (req, res) => {
+    let { userId, albumId } = req.query;
+    respondAction(setLikeRead(+userId, +albumId), res);
+});
+
+app.post('/likes', (req, res) => {
+    respondAction(addNewLike(req.body), res);
+});
+
+app.delete('/likes', (req, res) => {
+    let { userId, albumId } = req.query;
+    respondAction(cancelLike(+userId, +albumId), res);
+});
+
+app.post('/follows', (req, res) => {
+    respondAction(addNewFollow(req.body), res);
+});
+
+app.delete('/follows', (req, res) => {
+    let { userId, followerId } = req.query;
+    respondAction(cancelFollow(+userId, +followerId), res);
+});
+
+app.get('/follows/followed', (req, res) => {
+    let { followerId, pageNum, pageSize } = req.query;
+    respondDataFetch(getFollowedUsers(+followerId, +pageNum, +pageSize), res);
+});
+
+app.get('/follows/follower', (req, res) => {
+    let { userId, pageNum, pageSize } = req.query;
+    respondDataFetch(getFollowers(+userId, +pageNum, +pageSize), res);
+});
+
+app.get('/follows/unread/:userId', (req, res) => {
+    let { userId } = req.params;
+    respondDataFetch(getUnreadFollows(+userId), res);
+});
+
+app.put('/follows/read', (req, res) => {
+    let { userId, followerId } = req.query;
+    respondAction(setFollowRead(+userId, +followerId), res);
+});
+
+app.post('/albums', (req, res) => {
+    respondAction(addNewAlbum(req.body), res);
+});
+
+app.get('/albums/:userId', (req, res) => {
+    let { userId } = req.params;
+    let { pageNum, pageSize } = req.query;
+    respondDataFetch(getUserAlbums(+userId, +pageNum, +pageSize), res);
+});
+
+app.get('/albums', (req, res) => {
+    let { pageNum, pageSize } = req.query;
+    respondDataFetch(getLatestAlbums(+pageNum, +pageSize), res);
+});
+
+app.get('/albums/liked', (req, res) => {
+    let { userId, pageNum, pageSize } = req.query;
+    respondDataFetch(getLikedAlbums(+userId, +pageNum, +pageSize), res);
+});
+
+app.put('/albums', (req, res) => {
+    respondAction(modifyAlbum(req.body), res);
+});
+
+app.post('/participates', (req, res) => {
+    respondAction(addNewParticipateRequest(req.body), res);
+});
+
+app.get('/participates/:albumId', (req, res) => {
+    let { albumId } = req.params;
+    respondDataFetch(getParticipants(+albumId), res);
+});
+
+app.get('/participates/request/:userId', (req, res) => {
+    let { userId } = req.params;
+    respondDataFetch(getParticipateRequests(+userId), res);
+});
+
+app.get('/participates/result/:requesterId', (req, res) => {
+    let { requesterId } = req.params;
+    respondDataFetch(getParticipateResults(+requesterId), res);
+});
+
+app.put('/participates', (req, res) => {
+    let { albumId, userId, agreed } = req.body;
+    respondAction(resolveParticipate(albumId, userId, agreed), res);
+});
+
+app.put('/participates/result', (req, res) => {
+    let { albumId, userId, prevStatus } = req.body;
+    respondAction(setParticipateResultRead(albumId, userId, prevStatus), res);
 });
 
 const server = app.listen(8080, () => {

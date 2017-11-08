@@ -3,6 +3,7 @@ import * as passportLocal from 'passport-local';
 import { executeQuery, insertData, updateData } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
 import { convertDataToImage } from '../utils/imageUtils';
+import { globalMap } from '../config/globalMap';
 
 export type UserBriefInfo = {
     userId: number,
@@ -21,19 +22,7 @@ type User = {
     wechatQRCodeUrl: string
 } & UserBriefInfo;
 
-const objectToDataMap = {
-    userId: 'uid',
-    password: 'upassword',
-    name: 'uname',
-    wechatQRCodeUrl: 'wechat_qrcode_url',
-    wechatId: 'wechat_id',
-    qqNum: 'qq_num',
-    avatarUrl: 'avatar_url',
-    phoneNum: 'phone_num',
-    identityCode: 'iid',
-    genderCode: 'gid',
-    regionCode: 'rid'
-};
+const objectToDataMap = globalMap;
 
 export function getUserBriefInfo(userId: number): Promise<UserBriefInfo> {
     const sqlStr = 'SELECT uid, iid, gid, rid, uname, avatar_url FROM users WHERE uid = ?';
@@ -67,28 +56,6 @@ export function modifyQRCode(id: number, newQRCodeDataUrl: string): Promise<void
     return <Promise<void>>convertDataToImage(newQRCodeDataUrl, path).then(() => {
         const sqlStr = 'UPDATE users SET wechat_qrcode_url = ? WHERE uid = ?';
         return executeQuery(sqlStr, [path, id]);
-    });
-}
-
-// 获得关注某个用户的所有用户
-export function getFollowers(userId: number, pageNum: number, pageSize: number): Promise<UserBriefInfo[]> {
-    const sqlStr = `SELECT follower_id as id
-                    FROM follows
-                    WHERE uid = ?
-                    ORDER BY create_time DESC LIMIT ? OFFSET ?`;
-    return executeQuery(sqlStr, [userId, pageSize, pageNum * pageSize]).then(rows => {
-        return Promise.all((<any[]>rows).map(row => getUserBriefInfo(row.id)));
-    });
-}
-
-// 获得某用户关注的所有用户
-export function getFollowedUsers(userId: number, pageNum: number, pageSize: number): Promise<UserBriefInfo[]> {
-    const sqlStr = `SELECT uid as id
-                    FROM follows
-                    WHERE follower_id = ?
-                    ORDER BY create_time DESC LIMIT ? OFFSET ?`;
-    return executeQuery(sqlStr, [userId, pageSize, pageNum * pageSize]).then(rows => {
-        return Promise.all((<any[]>rows).map(row => getUserBriefInfo(row.id)));
     });
 }
 

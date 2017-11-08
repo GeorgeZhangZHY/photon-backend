@@ -3,6 +3,7 @@ import { mapKeys } from '../utils/objectUtils';
 import { convertDataToImage } from '../utils/imageUtils';
 import { updateTags, getTags } from './tags';
 import { updatePhotoUrls, getPhotoUrls } from './photoUrls';
+import { createLocalMap } from '../config/globalMap';
 
 type NewPost = {
     ownerId: number,
@@ -27,25 +28,13 @@ type Post = {
     requestNum: number  // 收到的约拍请求数
 } & NewPost;
 
-const objectToDataMap = {
+const objectToDataMap = createLocalMap({
     ownerName: 'uname',
     ownerIdentityCode: 'iid',
     ownerGenderCode: 'gid',
-    launchTime: 'launch_time',
-    isClosed: 'is_closed',
-    themeName: 'tname',
-    themeCoverUrl: 'cover_url',
     ownerId: 'uid',
     requiredRegionCode: 'rid',
-    costOptionCode: 'cid',
-    cost: 'cost',
-    content: 'content',
-    tagCodes: 'tagids',
-    photoUrls: 'photo_urls',
-    themeId: 'tid',
-    postId: 'pid',
-    requestNum: 'rnum'
-};
+});
 
 function savePostPhoto(postId: number, dataUrl: string, photoIndex: number): Promise<string> {
     const path = `./public/postPhotos/p${postId}-${photoIndex}.png`;
@@ -149,6 +138,6 @@ export function modifyPost(modifiedPost: Post) {
     // 更新单值属性
     return Promise.all([modifyTags, updatePhotos]).then(() => {
         const modifiedPostData = mapKeys(modifiedPost, objectToDataMap);
-        return updateData('posts', 'pid', modifiedPostData);
+        return updateData('posts', ['pid'], modifiedPostData);
     });
 }

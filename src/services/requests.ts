@@ -1,5 +1,6 @@
-import { insertData, executeQuery } from '../utils/sqliteUtils';
+import { insertData, executeQuery, updateData } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
+import { createLocalMap } from '../config/globalMap';
 
 type NewRequest = {
     requesterId: number,
@@ -8,7 +9,7 @@ type NewRequest = {
 };
 
 type RequesterInfo = {
-    name: string,
+    requesterName: string,
     genderCode: number,
     identityCode: number,
     avatarUrl: string,
@@ -29,21 +30,10 @@ type OwnRequest = {
     requestTime: string
 } & NewRequest;
 
-const objectToDataMap = {
+const objectToDataMap = createLocalMap({
     requesterId: 'uid',
-    postId: 'pid',
-    message: 'message',
-    requestTime: 'request_time',
-    hasRead: 'has_read',
-    name: 'uname',
-    genderCode: 'gid',
-    identityCode: 'iid',
-    avatarUrl: 'avatar_url',
-    wechatQRCodeUrl: 'wechat_qrcode_url',
-    wechatId: 'wechat_id',
-    qqNum: 'qq_num',
-    phoneNum: 'phone_num',
-};
+    requesterName: 'uname'
+});
 
 export function addNewRequest(newRequest: NewRequest): Promise<void> {
     const requestData = mapKeys(newRequest, objectToDataMap);
@@ -84,9 +74,16 @@ export function getUnreadOthersRequests(userId: number): Promise<OthersRequest[]
         .then(rows => (<any[]>rows).map(row => <OthersRequest>mapKeys(row, objectToDataMap, true)));
 }
 
+/**
+ * 
+ * @param userId 请求发起者的id
+ * @param postId 
+ */
 export function setRequestRead(userId: number, postId: number) {
-    const sqlStr = `UPDATE requests
-                    SET has_read = 1
-                    WHERE uid = ? AND pid = ?`;
-    return <Promise<void>>executeQuery(sqlStr, [userId, postId]);
+    const data = {
+        has_read: 1,
+        uid: userId,
+        pid: postId
+    };
+    return updateData('requests', ['uid', 'pid'], data);
 }

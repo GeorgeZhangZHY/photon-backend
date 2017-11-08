@@ -29,6 +29,18 @@ export function getEntries(obj: Object): [string, any][] {
 }
 
 /**
+ * 由键值对构造对象
+ * @param entries 对象的所有键值对所构成的二维数组
+ */
+export function constructObjectFromEntries(entries: [string, any][]): any {
+    let result = {};
+    entries.forEach(entry => {
+        result[entry[0]] = entry[1];
+    });
+    return result;
+}
+
+/**
  * 返回一个对象的所有键和所有值，其位置一一对应
  * @param obj 
  */

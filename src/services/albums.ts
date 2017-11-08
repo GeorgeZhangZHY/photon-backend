@@ -3,6 +3,7 @@ import { mapKeys } from '../utils/objectUtils';
 import { convertDataToImage } from '../utils/imageUtils';
 import { updateTags, getTags } from './tags';
 import { updatePhotoUrls, getPhotoUrls } from './photoUrls';
+import { globalMap } from '../config/globalMap';
 
 type NewAlbum = {
     themeId?: number,
@@ -24,22 +25,7 @@ type Album = {
     themeCoverUrl?: string
 } & NewAlbum;
 
-const objectToDataMap = {
-    themeId: 'tid',
-    themeName: 'tname',
-    themeCoverUrl: 'cover_url',
-    albumName: 'aname',
-    albumId: 'aid',
-    userId: 'uid',
-    shotTime: 'shot_time',
-    shotLocation: 'shot_location',
-    shotDevice: 'shot_device',
-    description: 'description',
-    photoUrls: 'photo_urls',
-    tagCodes: 'tagids',
-    coverOrdinal: 'cover_ordinal',
-    createTime: 'create_time'
-};
+const objectToDataMap = globalMap;
 
 function saveAlbumPhoto(albumId: number, dataUrl: string, photoIndex: number): Promise<string> {
     const path = `./public/albumPhotos/a${albumId}-${photoIndex}.png`;
@@ -58,7 +44,7 @@ function getAlbumTagsAndUrls(partialAlbumData: { aid: number } & any) {
     ]);
 }
 
-export function getAlbum(albumId: number): Promise<Album> {
+function getAlbum(albumId: number): Promise<Album> {
     // 单值属性
     const mainSqlStr = `SELECT a.*, t.tname, t.cover_url
                         FROM albums a LEFT JOIN themes t ON a.tid = t.tid
@@ -126,9 +112,31 @@ export function getLatestAlbums(pageNum: number, pageSize: number): Promise<Albu
     });
 }
 
+/**
+ * 获得一个用户喜欢的相册
+ * @param userId 
+ * @param pageNum 
+ * @param pageSize 
+ */
 export function getLikedAlbums(userId: number, pageNum: number, pageSize: number): Promise<Album[]> {
     const sqlStr = `SELECT aid
                     FROM likes
+                    WHERE uid = ?
+                    ORDER BY create_time DESC LIMIT ? OFFSET ?`;
+    return executeQuery(sqlStr, [userId, pageSize, pageNum * pageSize]).then(rows => {
+        return Promise.all((<any[]>rows).map(row => getAlbum(row.aid)));
+    });
+}
+
+/**
+ * 返回用户自己的相册
+ * @param userId 
+ * @param pageNum 
+ * @param pageSize 
+ */
+export function getUserAlbums(userId: number, pageNum: number, pageSize: number): Promise<Album[]> {
+    const sqlStr = `SELECT aid
+                    FROM albums
                     WHERE uid = ?
                     ORDER BY create_time DESC LIMIT ? OFFSET ?`;
     return executeQuery(sqlStr, [userId, pageSize, pageNum * pageSize]).then(rows => {

@@ -1,6 +1,7 @@
 import { insertData, executeQuery, deleteData, updateData } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
 import { UserBriefInfo } from './users';
+import { globalMap } from '../config/globalMap';
 
 type NewComment = {
     userId: number,
@@ -21,27 +22,14 @@ type CommentNotification = UserBriefInfo & NewComment & {
     hasRead: number
 };
 
-const objectToDataMap = {
-    userId: 'uid',
-    albumId: 'aid',
-    albumName: 'aname',
-    content: 'content',
-    userName: 'uname',
-    identityCode: 'iid',
-    genderCode: 'gid',
-    regionCode: 'rid',
-    avatarUrl: 'avatar_url',
-    commentId: 'cid',
-    commentTime: 'comment_time',
-    hasRead: 'has_read'
-};
+const objectToDataMap = globalMap;
 
 export function addNewComment(newComment: NewComment) {
     return insertData('comments', mapKeys(newComment, objectToDataMap));
 }
 
 export function deleteComment(commentId: number) {
-    return deleteData('comments', { cid: commentId });
+    return deleteData('comments', { comid: commentId });
 }
 
 export function getComments(albumId: number): Promise<Comment[]> {
@@ -63,5 +51,5 @@ export function getUnreadComments(userId: number): Promise<CommentNotification[]
 }
 
 export function setCommentRead(commentId: number) {
-    return updateData('comments', ['cid'], { cid: commentId, has_read: 1 });
+    return updateData('comments', ['comid'], { comid: commentId, has_read: 1 });
 }
