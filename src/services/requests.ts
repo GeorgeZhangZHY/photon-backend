@@ -76,13 +76,13 @@ export function getUnreadOthersRequests(userId: number): Promise<OthersRequest[]
 
 /**
  * 
- * @param userId 请求发起者的id
+ * @param requesterId 请求发起者的id
  * @param postId 
  */
-export function setRequestRead(userId: number, postId: number) {
+export function setRequestRead(requesterId: number, postId: number) {
     const data = {
         has_read: 1,
-        uid: userId,
+        uid: requesterId,
         pid: postId
     };
     return updateData('requests', ['uid', 'pid'], data);

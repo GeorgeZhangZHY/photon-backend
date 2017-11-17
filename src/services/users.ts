@@ -1,6 +1,6 @@
 import * as passport from 'passport';
 import * as passportLocal from 'passport-local';
-import { executeQuery, insertData, updateData } from '../utils/sqliteUtils';
+import { executeQuery, insertData, updateData, deleteData } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
 import { convertDataToImage } from '../utils/imageUtils';
 import { globalMap } from '../config/globalMap';
@@ -30,6 +30,13 @@ export function getUserBriefInfo(userId: number): Promise<UserBriefInfo> {
         let user = <UserBriefInfo>mapKeys(rows[0], objectToDataMap, true);
         return user;
     });
+}
+
+export function deleteUser(userId: number): Promise<void> {
+    const condition = {
+        uid: userId
+    };
+    return deleteData('users', condition);
 }
 
 export function addNewUser(newUser: Partial<User>): Promise<void> {

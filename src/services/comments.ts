@@ -36,7 +36,7 @@ export function getComments(albumId: number): Promise<Comment[]> {
     const sqlStr = `SELECT c.*, u.avatar_url, u.uname, u.gid, u.iid, u.rid
                     FROM comments c, users u
                     WHERE c.aid = ? AND c.uid=u.uid
-                    ORDER BY c.cid ASC`;
+                    ORDER BY c.comment_time ASC`;
     return executeQuery(sqlStr, [albumId])
         .then(rows => (<any[]>rows).map(row => <Comment>mapKeys(row, objectToDataMap, true)));
 }

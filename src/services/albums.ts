@@ -130,9 +130,7 @@ export function getLikedAlbums(userId: number, pageNum: number, pageSize: number
 
 /**
  * 返回用户自己的相册
- * @param userId 
- * @param pageNum 
- * @param pageSize 
+ * 
  */
 export function getUserAlbums(userId: number, pageNum: number, pageSize: number): Promise<Album[]> {
     const sqlStr = `SELECT aid

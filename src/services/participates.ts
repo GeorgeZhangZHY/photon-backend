@@ -49,12 +49,12 @@ export function getParticipateRequests(userId: number): Promise<ParticipateNotif
 
 /**
  * 主人同意或拒绝将某人添加为某相册的参与者
- * @param userId 申请者的id
+ * @param applicantId 申请者的id
  */
-export function resolveParticipate(albumId: number, userId: number, agreed: boolean) {
+export function resolveParticipate(albumId: number, applicantId: number, agreed: boolean) {
     const data = {
         aid: albumId,
-        uid: userId,
+        uid: applicantId,
         status: agreed ? 'agreed' : 'rejected'
     };
     return updateData('participates', ['aid', 'uid'], data);
@@ -62,15 +62,15 @@ export function resolveParticipate(albumId: number, userId: number, agreed: bool
 
 /**
  * 用户获得主人处理申请的结果
- * @param requesterId 申请者的id
+ * @param applicantId 申请者的id
  */
-export function getParticipateResults(requesterId: number): Promise<ParticipateNotification[]> {
+export function getParticipateResults(applicantId: number): Promise<ParticipateNotification[]> {
     const sqlStr = `SELECT p.status, p.create_time, p.aid, a.aname, u.uid, u.uname, u.avatar_url, u.iid, u.rid, u.gid
                     FROM participates p
                     JOIN albums a ON p.aid = a.aid
                     JOIN users u ON a.uid = u.uid
                     WHERE p.uid = ? AND (p.status = 'rejected' OR p.status = 'agreed')`; // 其中的用户信息是主人的
-    return executeQuery(sqlStr, [requesterId])
+    return executeQuery(sqlStr, [applicantId])
         .then(rows => (<any[]>rows).map(row => <ParticipateNotification>mapKeys(row, objectToDataMap, true)));
 }
 

@@ -24,7 +24,7 @@ export function cancelFollow(userId: number, followerId: number) {
     return deleteData('follows', { uid: userId, follower_id: followerId });
 }
 
-// 获得关注某个用户的所有用户
+// 获得关注某个用户的所有用户（某用户的粉丝）
 export function getFollowers(userId: number, pageNum: number, pageSize: number): Promise<UserBriefInfo[]> {
     const sqlStr = `SELECT f.follower_id, u.uname, u.iid, u.rid, u.gid, u.avatar_url
                     FROM follows f JOIN users u ON f.follower_id = u.uid
@@ -47,7 +47,7 @@ export function getFollowedUsers(followerId: number, pageNum: number, pageSize: 
 
 // 获得某用户未读的关注者通知
 export function getUnreadFollows(userId: number): Promise<FollowNotification[]> {
-    const sqlStr = `SELECT f.follower_id, f.create_time, u.uname, u.iid, u.rid, u.gid, u.avatar_url
+    const sqlStr = `SELECT f.*, u.uname, u.iid, u.rid, u.gid, u.avatar_url
                     FROM follows f JOIN users u ON f.follower_id = u.uid
                     WHERE f.uid = ? AND has_read = 0
                     ORDER BY create_time DESC`;

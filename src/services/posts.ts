@@ -49,7 +49,7 @@ function getPostTagsAndUrls(partialPostData: { pid: number } & any) {
             partialPostData.tagids = tagIds;
         }),
         // 获取帖子的图片
-        getPhotoUrls('post_photo_url', 'pid', partialPostData.pid).then(photoUrls => {
+        getPhotoUrls('post_photo_urls', 'pid', partialPostData.pid).then(photoUrls => {
             partialPostData.photo_urls = photoUrls;
         })
     ]);
@@ -111,8 +111,11 @@ export function getLatestPosts(pageNum: number, pageSize: number): Promise<Post[
 }
 
 export function closePost(pid: number) {
-    const sqlStr = 'UPDATE posts SET is_closed = 1 WHERE pid = ?';
-    return executeQuery(sqlStr, [pid]);
+    const data = {
+        is_closed: 1,
+        pid
+    };
+    return updateData('posts', ['pid'], data);
 }
 
 export function modifyPost(modifiedPost: Post) {

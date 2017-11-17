@@ -54,12 +54,12 @@ export function getUnreadLikes(userId: number): Promise<LikeNotification[]> {
 
 /**
  * 将某个喜欢通知设为已读
- * @param userId 点喜欢的用户id
+ * @param likerId 点喜欢的用户id
  * @param albumId 
  */
-export function setLikeRead(userId: number, albumId: number) {
+export function setLikeRead(likerId: number, albumId: number) {
     const data = {
-        uid: userId,
+        uid: likerId,
         aid: albumId,
         has_read: 1
     };

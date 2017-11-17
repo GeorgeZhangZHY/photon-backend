@@ -156,8 +156,8 @@ app.get('/requests/others/unread/:userId', (req, res) => {
 });
 
 app.put('/requests/others/read', (req, res) => {
-    let { userId, postId } = req.query;
-    respondAction(setRequestRead(+userId, +postId), res);
+    let { requesterId, postId } = req.query;
+    respondAction(setRequestRead(+requesterId, +postId), res);
 });
 
 app.post('/comments', (req, res) => {
@@ -169,9 +169,9 @@ app.get('/comments/:albumId', (req, res) => {
     respondDataFetch(getComments(+albumId), res);
 });
 
-app.delete('/comments/:albumId', (req, res) => {
-    let { albumId } = req.params;
-    respondAction(deleteComment(+albumId), res);
+app.delete('/comments/:commentId', (req, res) => {
+    let { commentId } = req.params;
+    respondAction(deleteComment(+commentId), res);
 });
 
 app.get('/comments/unread/:userId', (req, res) => {
@@ -195,8 +195,8 @@ app.get('/likes/unread/:userId', (req, res) => {
 });
 
 app.put('/likes/read', (req, res) => {
-    let { userId, albumId } = req.query;
-    respondAction(setLikeRead(+userId, +albumId), res);
+    let { likerId, albumId } = req.query;
+    respondAction(setLikeRead(+likerId, +albumId), res);
 });
 
 app.post('/likes', (req, res) => {
@@ -252,8 +252,9 @@ app.get('/albums', (req, res) => {
     respondDataFetch(getLatestAlbums(+pageNum, +pageSize), res);
 });
 
-app.get('/albums/liked', (req, res) => {
-    let { userId, pageNum, pageSize } = req.query;
+app.get('/albums/:userId/liked', (req, res) => {
+    let { userId } = req.params;
+    let { pageNum, pageSize } = req.query;
     respondDataFetch(getLikedAlbums(+userId, +pageNum, +pageSize), res);
 });
 
@@ -275,14 +276,14 @@ app.get('/participates/request/:userId', (req, res) => {
     respondDataFetch(getParticipateRequests(+userId), res);
 });
 
-app.get('/participates/result/:requesterId', (req, res) => {
-    let { requesterId } = req.params;
-    respondDataFetch(getParticipateResults(+requesterId), res);
+app.get('/participates/result/:applicantId', (req, res) => {
+    let { applicantId } = req.params;
+    respondDataFetch(getParticipateResults(+applicantId), res);
 });
 
 app.put('/participates', (req, res) => {
-    let { albumId, userId, agreed } = req.body;
-    respondAction(resolveParticipate(albumId, userId, agreed), res);
+    let { albumId, applicantId, agreed } = req.body;
+    respondAction(resolveParticipate(albumId, applicantId, agreed), res);
 });
 
 app.put('/participates/result', (req, res) => {

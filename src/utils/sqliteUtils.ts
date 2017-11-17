@@ -25,8 +25,13 @@ const queryMethods = {
  * @param dataObject 更新数据，其中含有主键及其值
  */
 export function updateData(tableName: string, primaryKeyNames: string[], dataObject: {}) {
+    const primaryValues = primaryKeyNames.map(key => {
+        const value = dataObject[key];
+        delete dataObject[key];
+        return value;
+    });
     const { keys, values } = getKeysAndValues(dataObject);
-    values.push(primaryKeyNames.map(keyName => dataObject[keyName]));
+    values.push(...primaryValues);
     const sqlStr = `UPDATE ${tableName} 
                     SET ${keys.map(key => key + ' = ?').join(', ')} 
                     WHERE ${primaryKeyNames.map(name => name + ' = ?').join(' AND ')}`;  // 该库‘=’前不可以用占位符
