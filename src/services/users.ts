@@ -8,9 +8,10 @@ import { globalMap } from '../config/globalMap';
 export type UserBriefInfo = {
     userId: number,
     userName: string,
-    identityCode: number,
-    genderCode: number,
+    identity: string,
+    gender: string,
     regionCode: number,
+    regionName: string,
     avatarUrl: string
 };
 
@@ -25,7 +26,9 @@ type User = {
 const objectToDataMap = globalMap;
 
 export function getUserBriefInfo(userId: number): Promise<UserBriefInfo> {
-    const sqlStr = 'SELECT uid, iid, gid, rid, uname, avatar_url FROM users WHERE uid = ?';
+    const sqlStr = `SELECT u.uid, u.identity, u.gender, u.rid, u.uname, u.avatar_url, r.rname 
+                    FROM users u LEFT JOIN regions r ON u.rid = r.rid
+                    WHERE uid = ?`;
     return executeQuery(sqlStr, [userId]).then(rows => {
         let user = <UserBriefInfo>mapKeys(rows[0], objectToDataMap, true);
         return user;
@@ -67,7 +70,9 @@ export function modifyQRCode(id: number, newQRCodeDataUrl: string): Promise<void
 }
 
 passport.use(new passportLocal.Strategy({ usernameField: 'name' }, (username, password, done) => {
-    const sqlStr = 'SELECT * FROM users WHERE uname = ?';
+    const sqlStr = `SELECT u.*, r.rname 
+                    FROM users u LEFT JOIN regions r ON u.rid = r.rid
+                    WHERE u.uname = ?`;
     executeQuery(sqlStr, [username]).then((result) => {
         if ((<any[]>result).length === 0) {
             return done(null, false, { message: 'No such user!' });
@@ -77,7 +82,7 @@ passport.use(new passportLocal.Strategy({ usernameField: 'name' }, (username, pa
             delete user.password; // 前端不应拿到用户密码
             done(null, user);
         } else {
-            done(null, false, { message: 'Wrong password or username!' });
+            done(null, false, { message: 'Wrong password!' });
         }
     }).catch(err => {
         done(err);

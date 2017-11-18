@@ -8,29 +8,31 @@ export const globalMap = {
     themeId: 'tid',
     albumId: 'aid',
     userId: 'uid',
-    identityCode: 'iid',
-    genderCode: 'gid',
     regionCode: 'rid',
     followerId: 'follower_id',
     commentId: 'comid',
     postId: 'pid',
-    costOptionCode: 'cid',
     wechatId: 'wechat_id',
-    tagCodes: 'tagids',
 
     albumName: 'aname',
     themeName: 'tname',
     userName: 'uname',
+    regionName: 'rname',
+
+    costOption: 'coption',
+    tag: 'tag',
+    identity: 'identity',
+    gender: 'gender',
 
     avatarUrl: 'avatar_url',
     themeCoverUrl: 'cover_url',
     wechatQRCodeUrl: 'wechat_qrcode_url',
-    
+
     shotLocation: 'shot_location',
     shotDevice: 'shot_device',
     description: 'description',
     photoUrls: 'photo_urls',
-    
+
     coverOrdinal: 'cover_ordinal',
 
     shotTime: 'shot_time',
@@ -50,7 +52,7 @@ export const globalMap = {
     requestNum: 'rnum',
     qqNum: 'qq_num',
     phoneNum: 'phone_num'
-    
+
 };
 
 /**

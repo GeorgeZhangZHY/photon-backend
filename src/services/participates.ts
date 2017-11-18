@@ -25,8 +25,10 @@ export function addNewParticipateRequest(newParticipate: NewParticipate) {
 }
 
 export function getParticipants(albumId: number): Promise<UserBriefInfo[]> {
-    const sqlStr = `SELECT u.uname, u.avatar_url, u.uid, u.iid, u.gid, u.rid
-                    FROM participates p JOIN users u ON p.uid = u.uid
+    const sqlStr = `SELECT u.uname, u.avatar_url, u.uid, u.identity, u.gender, u.rid, r.rname
+                    FROM participates p 
+                        JOIN users u ON p.uid = u.uid 
+                        LEFT JOIN regions r ON u.rid = r.rid
                     WHERE p.aid = ? AND (p.status = 'agreed' OR p.status = 'succeeded')
                     ORDER BY p.create_time ASC`;
     return executeQuery(sqlStr, [albumId])
@@ -38,10 +40,11 @@ export function getParticipants(albumId: number): Promise<UserBriefInfo[]> {
  * @param userId 主人的id
  */
 export function getParticipateRequests(userId: number): Promise<ParticipateNotification[]> {
-    const sqlStr = `SELECT p.*, a.aname, u.uname, u.avatar_url, u.iid, u.rid, u.gid 
+    const sqlStr = `SELECT p.*, a.aname, u.uname, u.avatar_url, u.identity, u.rid, u.gender, r.rname
                     FROM participates p
-                    JOIN albums a ON p.aid = a.aid
-                    JOIN users u ON p.uid = u.uid
+                        JOIN albums a ON p.aid = a.aid
+                        JOIN users u ON p.uid = u.uid
+                        LEFT JOIN regions r ON u.rid = r.rid
                     WHERE a.uid = ? AND p.status = 'pending'`; // 其中的用户信息是申请者的
     return executeQuery(sqlStr, [userId])
         .then(rows => (<any[]>rows).map(row => <ParticipateNotification>mapKeys(row, objectToDataMap, true)));
@@ -65,10 +68,12 @@ export function resolveParticipate(albumId: number, applicantId: number, agreed:
  * @param applicantId 申请者的id
  */
 export function getParticipateResults(applicantId: number): Promise<ParticipateNotification[]> {
-    const sqlStr = `SELECT p.status, p.create_time, p.aid, a.aname, u.uid, u.uname, u.avatar_url, u.iid, u.rid, u.gid
+    const sqlStr = `SELECT p.status, p.create_time, p.aid, a.aname, u.uid, u.uname, 
+                        u.avatar_url, u.identity, u.rid, u.gender, r.rname
                     FROM participates p
-                    JOIN albums a ON p.aid = a.aid
-                    JOIN users u ON a.uid = u.uid
+                        JOIN albums a ON p.aid = a.aid
+                        JOIN users u ON a.uid = u.uid
+                        LEFT JOIN regions r ON u.rid = r.rid
                     WHERE p.uid = ? AND (p.status = 'rejected' OR p.status = 'agreed')`; // 其中的用户信息是主人的
     return executeQuery(sqlStr, [applicantId])
         .then(rows => (<any[]>rows).map(row => <ParticipateNotification>mapKeys(row, objectToDataMap, true)));

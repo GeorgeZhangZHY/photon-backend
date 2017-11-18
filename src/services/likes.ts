@@ -24,9 +24,10 @@ export function addNewLike(newLike: NewLike) {
 }
 
 export function getLikesOfAlbum(albumId: number): Promise<Like[]> {
-    const sqlStr = `SELECT l.*, u.uname, u.avatar_url, u.gid, u.iid, u.rid
+    const sqlStr = `SELECT l.*, u.uname, u.avatar_url, u.gender, u.identity, u.rid, r.rname
                     FROM likes l
                         JOIN users u ON l.uid = u.uid
+                        LEFT JOIN regions r ON u.rid = r.rid
                     WHERE l.aid = ?
                     ORDER BY l.create_time ASC`;
     return executeQuery(sqlStr, [albumId])
@@ -42,10 +43,11 @@ export function cancelLike(userId: number, albumId: number) {
  * @param userId 相册主人的id
  */
 export function getUnreadLikes(userId: number): Promise<LikeNotification[]> {
-    const sqlStr = `SELECT l.*, a.aname, u.uname, u.avatar_url, u.gid, u.iid, u.rid
+    const sqlStr = `SELECT l.*, a.aname, u.uname, u.avatar_url, u.gender, u.identity, u.rid, r.rname
                     FROM likes l
                         JOIN users u ON l.uid = u.uid
                         JOIN albums a ON l.aid = a.aid
+                        LEFT JOIN regions r ON u.rid = r.rid
                     WHERE a.uid = ? AND l.has_read = 0
                     ORDER BY l.create_time DESC`;
     return executeQuery(sqlStr, [userId])

@@ -14,7 +14,7 @@ type NewAlbum = {
     shotDevice: string,
     description: string,
     photoUrls: string[],
-    tagCodes: number[],
+    tags: string[],
     coverOrdinal: number    // 封面图片对应于其所有图片中的后缀
 };
 
@@ -61,16 +61,16 @@ export function addNewAlbum(newAlbum: NewAlbum) {
     return executeQuery('SELECT max(aid) as max FROM albums').then(rows => {
         const aid: number = rows[0].max + 1;
         // 转存多值属性至独立的表
-        let { photoUrls, tagCodes } = newAlbum;
+        let { photoUrls, tags } = newAlbum;
 
-        delete newAlbum.tagCodes;
+        delete newAlbum.tags;
         delete newAlbum.photoUrls;
         const newAlbumData = mapKeys(newAlbum, objectToDataMap);
 
         return insertData('albums', newAlbumData).then(() => {
             let insertTags, insertPhotoUrls;
-            if (tagCodes.length > 0) {
-                insertTags = updateTags('album_tags', tagCodes, 'aid', aid);
+            if (tags.length > 0) {
+                insertTags = updateTags('album_tags', tags, 'aid', aid);
             }
             if (photoUrls.length > 0) {
                 insertPhotoUrls = updatePhotoUrls('album_photo_urls', photoUrls, 'aid', aid, saveAlbumPhoto);
@@ -82,17 +82,17 @@ export function addNewAlbum(newAlbum: NewAlbum) {
 
 export function modifyAlbum(modifiedAlbum: Album) {
     // 单独更新图片和标签
-    let { photoUrls, tagCodes } = modifiedAlbum;
+    let { photoUrls, tags } = modifiedAlbum;
     const aid = modifiedAlbum.albumId;
     delete modifiedAlbum.photoUrls;
-    delete modifiedAlbum.tagCodes;
+    delete modifiedAlbum.tags;
 
     // 删除其他非albums表的属性
     delete modifiedAlbum.themeCoverUrl;
     delete modifiedAlbum.themeName;
 
     // 更新标签
-    const modifyTags = updateTags('album_tags', tagCodes, 'aid', aid);
+    const modifyTags = updateTags('album_tags', tags, 'aid', aid);
     // 更新图片
     const updatePhotos = updatePhotoUrls('album_photo_urls', photoUrls, 'aid', aid, saveAlbumPhoto);
     // 更新单值属性

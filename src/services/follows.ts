@@ -26,8 +26,10 @@ export function cancelFollow(userId: number, followerId: number) {
 
 // 获得关注某个用户的所有用户（某用户的粉丝）
 export function getFollowers(userId: number, pageNum: number, pageSize: number): Promise<UserBriefInfo[]> {
-    const sqlStr = `SELECT f.follower_id, u.uname, u.iid, u.rid, u.gid, u.avatar_url
-                    FROM follows f JOIN users u ON f.follower_id = u.uid
+    const sqlStr = `SELECT f.follower_id, u.uname, u.identity, u.rid, u.gender, u.avatar_url, r.rname
+                    FROM follows f 
+                        JOIN users u ON f.follower_id = u.uid
+                        LEFT JOIN regions r ON u.rid = r.rid
                     WHERE f.uid = ?
                     ORDER BY create_time DESC LIMIT ? OFFSET ?`;
     return executeQuery(sqlStr, [userId, pageSize, pageNum * pageSize])
@@ -36,8 +38,10 @@ export function getFollowers(userId: number, pageNum: number, pageSize: number):
 
 // 获得某用户关注的所有用户
 export function getFollowedUsers(followerId: number, pageNum: number, pageSize: number): Promise<UserBriefInfo[]> {
-    const sqlStr = `SELECT u.uid, u.uname, u.avatar_url, u.iid, u.gid, u.rid
-                    FROM follows f JOIN users u ON f.uid = u.uid
+    const sqlStr = `SELECT u.uid, u.uname, u.avatar_url, u.identity, u.gender, u.rid, r.rname
+                    FROM follows f 
+                        JOIN users u ON f.uid = u.uid
+                        LEFT JOIN regions r ON u.rid = r.rid
                     WHERE f.follower_id = ?
                     ORDER BY create_time DESC
                     LIMIT ? OFFSET ?`;
@@ -47,8 +51,10 @@ export function getFollowedUsers(followerId: number, pageNum: number, pageSize: 
 
 // 获得某用户未读的关注者通知
 export function getUnreadFollows(userId: number): Promise<FollowNotification[]> {
-    const sqlStr = `SELECT f.*, u.uname, u.iid, u.rid, u.gid, u.avatar_url
-                    FROM follows f JOIN users u ON f.follower_id = u.uid
+    const sqlStr = `SELECT f.*, u.uname, u.identity, u.rid, u.gender, u.avatar_url, r.rname
+                    FROM follows f 
+                        JOIN users u ON f.follower_id = u.uid
+                        LEFT JOIN regions r ON u.rid = r.rid
                     WHERE f.uid = ? AND has_read = 0
                     ORDER BY create_time DESC`;
     return executeQuery(sqlStr, [userId])

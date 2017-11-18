@@ -1,7 +1,7 @@
 import { executeQuery, deleteData, insertData } from '../utils/sqliteUtils';
 
 export default function fetchAllTags(): Promise<any[]> {
-    const sqlStr = 'SELECT tagid AS code, tagname as name FROM tags';
+    const sqlStr = 'SELECT * FROM tags';
     return <Promise<any[]>>executeQuery(sqlStr);
 }
 
@@ -10,11 +10,11 @@ export default function fetchAllTags(): Promise<any[]> {
  * @param keyName 该多值属性属于原有表的属性名，如'pid','aid'等
  * @param keyValue 属性值
  */
-export function updateTags(tableName: string, newTagCodes: number[], keyName: string, keyValue: number) {
+export function updateTags(tableName: string, newTags: string[], keyName: string, keyValue: number) {
     // 更新标签
-    const tagsData = newTagCodes.map(tagCode => ({
+    const tagsData = newTags.map(tag => ({
         [keyName]: keyValue,
-        tagid: tagCode
+        tag
     }));
     return deleteData(tableName, { [keyName]: keyValue }).then(() =>
         Promise.all(tagsData.map(tag => insertData(tableName, tag)))
@@ -27,7 +27,7 @@ export function updateTags(tableName: string, newTagCodes: number[], keyName: st
  * @param keyName id属性名
  * @param keyValue id值
  */
-export function getTags(tableName: string, keyName: string, keyValue: number): Promise<number[]> {
-    return executeQuery(`SELECT tagid FROM ${tableName} WHERE ${keyName} = ?`, [keyValue])
-        .then(rows => (<any[]>rows).map(row => <number>row.tagid));
+export function getTags(tableName: string, keyName: string, keyValue: number): Promise<string[]> {
+    return executeQuery(`SELECT tag FROM ${tableName} WHERE ${keyName} = ?`, [keyValue])
+        .then(rows => (<any[]>rows).map(row => <string>row.tag));
 }

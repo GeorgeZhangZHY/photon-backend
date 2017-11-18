@@ -10,8 +10,8 @@ type NewRequest = {
 
 type RequesterInfo = {
     requesterName: string,
-    genderCode: number,
-    identityCode: number,
+    gender: string,
+    identity: string,
     avatarUrl: string,
     wechatQRCodeUrl: string,
     wechatId: string,
@@ -52,7 +52,7 @@ export function getOwnRequests(userId: number): Promise<OwnRequest[]> {
  * 获得他人向该用户发起的所有约拍请求，含已读的和未读的 
  */
 export function getOthersRequests(userId: number, pageNum: number, pageSize: number): Promise<OthersRequest[]> {
-    const sqlStr = `SELECT r.*, u.gid, u.iid, u.uname, u.phone_num, u.qq_num, 
+    const sqlStr = `SELECT r.*, u.gender, u.identity, u.uname, u.phone_num, u.qq_num, 
                         u.wechat_id, u.wechat_qrcode_url, u.avatar_url
                     FROM users u, requests r, posts p
                     WHERE p.uid = ? AND p.pid = r.pid AND r.uid = u.uid
@@ -65,7 +65,7 @@ export function getOthersRequests(userId: number, pageNum: number, pageSize: num
  * 获得他人向该用户发起的未读的约拍请求
  */
 export function getUnreadOthersRequests(userId: number): Promise<OthersRequest[]> {
-    const sqlStr = `SELECT r.*, u.gid, u.iid, u.uname, u.phone_num, u.qq_num, 
+    const sqlStr = `SELECT r.*, u.gender, u.identity, u.uname, u.phone_num, u.qq_num, 
                         u.wechat_id, u.wechat_qrcode_url, u.avatar_url
                     FROM users u, requests r, posts p
                     WHERE p.uid = ? AND p.pid = r.pid AND r.uid = u.uid AND r.has_read = 0
