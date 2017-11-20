@@ -14,10 +14,10 @@ import {
 import { addNewComment, deleteComment, getComments, getUnreadComments, setCommentRead } from './services/comments';
 import { addNewLike, cancelLike, getLikesOfAlbum, getUnreadLikes, setLikeRead } from './services/likes';
 import {
-    addNewRequest, getOthersRequests, getOwnRequests, getUnreadOthersRequests, setRequestRead
+    addNewRequest, getOthersRequests, getOwnRequests, getUnreadOthersRequests, setRequestRead, checkRequest
 } from './services/requests';
 import {
-    addNewFollow, cancelFollow, getFollowedUsers, getFollowers, getUnreadFollows, setFollowRead
+    addNewFollow, cancelFollow, getFollowedUsers, getFollowers, getUnreadFollows, setFollowRead, checkFollow
 } from './services/follows';
 import { addNewAlbum, getLatestAlbums, getLikedAlbums, modifyAlbum, getUserAlbums } from './services/albums';
 import {
@@ -139,6 +139,11 @@ app.post('/requests', (req, res) => {
     respondAction(addNewRequest(req.body), res);
 });
 
+app.get('/requests/check', (req, res) => {
+    let { requesterId, postId } = req.query;
+    respondDataFetch(checkRequest(+requesterId, +postId), res);
+});
+
 app.get('/requests/own/:requesterId', (req, res) => {
     let { requesterId } = req.params;
     respondDataFetch(getOwnRequests(+requesterId), res);
@@ -156,8 +161,8 @@ app.get('/requests/others/unread/:userId', (req, res) => {
 });
 
 app.put('/requests/others/read', (req, res) => {
-    let { requesterId, postId } = req.query;
-    respondAction(setRequestRead(+requesterId, +postId), res);
+    let { requesterId, postId } = req.body;
+    respondAction(setRequestRead(requesterId, postId), res);
 });
 
 app.post('/comments', (req, res) => {
@@ -179,9 +184,9 @@ app.get('/comments/unread/:userId', (req, res) => {
     respondDataFetch(getUnreadComments(+userId), res);
 });
 
-app.put('/comments/read/:commentId', (req, res) => {
-    let { commentId } = req.params;
-    respondAction(setCommentRead(+commentId), res);
+app.put('/comments/read', (req, res) => {
+    let { commentId } = req.body;
+    respondAction(setCommentRead(commentId), res);
 });
 
 app.get('/likes/album/:albumId', (req, res) => {
@@ -195,8 +200,8 @@ app.get('/likes/unread/:userId', (req, res) => {
 });
 
 app.put('/likes/read', (req, res) => {
-    let { likerId, albumId } = req.query;
-    respondAction(setLikeRead(+likerId, +albumId), res);
+    let { likerId, albumId } = req.body;
+    respondAction(setLikeRead(likerId, albumId), res);
 });
 
 app.post('/likes', (req, res) => {
@@ -217,6 +222,11 @@ app.delete('/follows', (req, res) => {
     respondAction(cancelFollow(+userId, +followerId), res);
 });
 
+app.get('/follows/check', (req, res) => {
+    let { userId, followerId } = req.query;
+    respondDataFetch(checkFollow(+userId, +followerId), res);
+});
+
 app.get('/follows/followed', (req, res) => {
     let { followerId, pageNum, pageSize } = req.query;
     respondDataFetch(getFollowedUsers(+followerId, +pageNum, +pageSize), res);
@@ -233,8 +243,8 @@ app.get('/follows/unread/:userId', (req, res) => {
 });
 
 app.put('/follows/read', (req, res) => {
-    let { userId, followerId } = req.query;
-    respondAction(setFollowRead(+userId, +followerId), res);
+    let { userId, followerId } = req.body;
+    respondAction(setFollowRead(userId, followerId), res);
 });
 
 app.post('/albums', (req, res) => {

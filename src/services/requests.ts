@@ -87,3 +87,13 @@ export function setRequestRead(requesterId: number, postId: number) {
     };
     return updateData('requests', ['uid', 'pid'], data);
 }
+
+// 查询是否已向某个帖子发起约拍请求
+export function checkRequest(requesterId: number, postId: number): Promise<{ hasRequested: boolean }> {
+    const sqlStr = `SELECT count(*) AS hasRequested
+                    FROM requests
+                    WHERE uid = ? AND pid = ?`;
+    return executeQuery(sqlStr, [requesterId, postId]).then(rows => ({
+        hasRequested: !!(rows[0].hasRequested)
+    }));
+}
