@@ -1,4 +1,4 @@
-import { insertData, executeQuery, updateData } from '../utils/sqliteUtils';
+import { insertData, executeQuery, updateData, checkExist } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
 import { createLocalMap } from '../config/globalMap';
 
@@ -90,10 +90,10 @@ export function setRequestRead(requesterId: number, postId: number) {
 
 // 查询是否已向某个帖子发起约拍请求
 export function checkRequest(requesterId: number, postId: number): Promise<{ hasRequested: boolean }> {
-    const sqlStr = `SELECT count(*) AS hasRequested
-                    FROM requests
-                    WHERE uid = ? AND pid = ?`;
-    return executeQuery(sqlStr, [requesterId, postId]).then(rows => ({
-        hasRequested: !!(rows[0].hasRequested)
+    return checkExist('requests', {
+        uid: requesterId,
+        pid: postId
+    }).then(result => ({
+        hasRequested: result
     }));
 }

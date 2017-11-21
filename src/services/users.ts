@@ -1,6 +1,6 @@
 import * as passport from 'passport';
 import * as passportLocal from 'passport-local';
-import { executeQuery, insertData, updateData, deleteData } from '../utils/sqliteUtils';
+import { executeQuery, insertData, updateData, deleteData, checkExist } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
 import { convertDataToImage } from '../utils/imageUtils';
 import { globalMap } from '../config/globalMap';
@@ -33,6 +33,15 @@ export function getUserBriefInfo(userId: number): Promise<UserBriefInfo> {
         let user = <UserBriefInfo>mapKeys(rows[0], objectToDataMap, true);
         return user;
     });
+}
+
+// 检查用户名是否已被使用
+export function checkUserName(userName: string): Promise<{ isUsed: boolean }> {
+    return checkExist('users', {
+        uname: userName
+    }).then(result => ({
+        isUsed: result
+    }));
 }
 
 export function deleteUser(userId: number): Promise<void> {
@@ -69,7 +78,7 @@ export function modifyQRCode(id: number, newQRCodeDataUrl: string): Promise<void
     });
 }
 
-passport.use(new passportLocal.Strategy({ usernameField: 'name' }, (username, password, done) => {
+passport.use(new passportLocal.Strategy({ usernameField: 'userName' }, (username, password, done) => {
     const sqlStr = `SELECT u.*, r.rname 
                     FROM users u LEFT JOIN regions r ON u.rid = r.rid
                     WHERE u.uname = ?`;

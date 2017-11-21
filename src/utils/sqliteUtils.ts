@@ -53,6 +53,19 @@ export function insertData(tableName: string, dataObject: {}) {
     return <Promise<void>>executeQuery(sqlStr, values);
 }
 
+/**
+ * 查询满足某条件的数据在某个表中是否存在
+ * @param tableName 
+ * @param conditions 
+ */
+export function checkExist(tableName: string, conditions: {}): Promise<boolean> {
+    const { keys, values } = getKeysAndValues(conditions);
+    const sqlStr = `SELECT count(*) AS count
+                    FROM ${tableName}
+                    WHERE ${keys.map(key => key + ' = ?').join(' AND ')}`;
+    return executeQuery(sqlStr, values).then(rows => !!(rows[0].count));
+}
+
 export function executeQuery(sqlStr: string, values?: any[]) {
 
     const query = queryMethods[sqlStr.trim().substring(0, 6).toLowerCase()];

@@ -9,7 +9,7 @@ import fetchAllGenders from './services/genders';
 import fetchAllTags from './services/tags';
 import { addNewPost, getLatestPosts, modifyPost, getPost, closePost } from './services/posts';
 import {
-    addNewUser, configuredPassport, modifyUserInfo, modifyAvatar, modifyQRCode, getUserBriefInfo
+    addNewUser, configuredPassport, modifyUserInfo, modifyAvatar, modifyQRCode, getUserBriefInfo, checkUserName
 } from './services/users';
 import { addNewComment, deleteComment, getComments, getUnreadComments, setCommentRead } from './services/comments';
 import { addNewLike, cancelLike, getLikesOfAlbum, getUnreadLikes, setLikeRead } from './services/likes';
@@ -83,6 +83,11 @@ app.get('/tags', (req, res) => {
 app.get('/users/:userId', (req, res) => {
     let { userId } = req.params;
     respondDataFetch(getUserBriefInfo(+userId), res);
+});
+
+app.get('/users/name/check', (req, res) => {
+    let { userName } = req.query;
+    respondDataFetch(checkUserName(userName), res);
 });
 
 app.post('/users', (req, res) => {

@@ -1,4 +1,4 @@
-import { insertData, deleteData, executeQuery, updateData } from '../utils/sqliteUtils';
+import { insertData, deleteData, executeQuery, updateData, checkExist } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
 import { UserBriefInfo } from './users';
 import { globalMap } from '../config/globalMap';
@@ -73,10 +73,10 @@ export function setFollowRead(userId: number, followerId: number) {
 
 // 查询是否关注某个用户
 export function checkFollow(userId: number, followerId: number): Promise<{ hasFollowed: boolean }> {
-    const sqlStr = `SELECT count(*) AS hasFollowed
-                    FROM follows
-                    WHERE uid = ? AND follower_id = ?`;
-    return executeQuery(sqlStr, [userId, followerId]).then(rows => ({
-        hasFollowed: !!(rows[0].hasFollowed)
+    return checkExist('follows', {
+        uid: userId,
+        follower_id: followerId
+    }).then(result => ({
+        hasFollowed: result
     }));
 }
