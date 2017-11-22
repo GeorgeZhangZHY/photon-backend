@@ -13,6 +13,9 @@ export const globalMap = {
     commentId: 'comid',
     postId: 'pid',
     wechatId: 'wechat_id',
+    creatorId: 'creator_id',
+
+    themeDescription: 'tdesc',
 
     albumName: 'aname',
     themeName: 'tname',
@@ -51,8 +54,9 @@ export const globalMap = {
 
     requestNum: 'rnum',
     qqNum: 'qq_num',
-    phoneNum: 'phone_num'
-
+    phoneNum: 'phone_num',
+    collectNum: 'collect_num',
+    postNum: 'post_num'
 };
 
 /**

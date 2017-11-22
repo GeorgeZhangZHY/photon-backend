@@ -61,7 +61,7 @@ function getPostTagsAndUrls(partialPostData: { pid: number } & any) {
 
 // 需要将帖子本身的内容、帖子的图片、帖子的标签分别存到不同的表
 export function addNewPost(newPost: NewPost) {
-    return executeQuery('SELECT max(pid) as max FROM posts').then(rows => {
+    return executeQuery('SELECT ifnull(max(pid), 0) as max FROM posts').then(rows => {
         const pid: number = rows[0].max + 1;
         // 转存多值属性至独立的表
         let { photoUrls, tags } = newPost;
