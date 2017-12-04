@@ -12,7 +12,7 @@ import {
     addNewUser, configuredPassport, modifyUserInfo, modifyAvatar, modifyQRCode, getUserBriefInfo, checkUserName
 } from './services/users';
 import { addNewComment, deleteComment, getComments, getUnreadComments, setCommentRead } from './services/comments';
-import { addNewLike, cancelLike, getLikesOfAlbum, getUnreadLikes, setLikeRead } from './services/likes';
+import { addNewLike, cancelLike, getLikesOfAlbum, getUnreadLikes, setLikeRead, checkLike } from './services/likes';
 import {
     addNewRequest, getOthersRequests, getOwnRequests, getUnreadOthersRequests, setRequestRead, checkRequest
 } from './services/requests';
@@ -22,7 +22,8 @@ import {
 import { addNewAlbum, getLatestAlbums, getLikedAlbums, modifyAlbum, getUserAlbums } from './services/albums';
 import {
     addNewParticipateRequest, getParticipants, getParticipateRequests,
-    getParticipateResults, resolveParticipate, setParticipateResultRead
+    getParticipateResults, resolveParticipate, setParticipateResultRead,
+    checkParticipateRequest
 } from './services/participates';
 
 const app = express();
@@ -204,6 +205,11 @@ app.get('/likes/unread/:userId', (req, res) => {
     respondDataFetch(getUnreadLikes(+userId), res);
 });
 
+app.get('/likes/check', (req, res) => {
+    const { userId, albumId } = req.query;
+    respondDataFetch(checkLike(+userId, +albumId), res);
+});
+
 app.put('/likes/read', (req, res) => {
     let { likerId, albumId } = req.body;
     respondAction(setLikeRead(likerId, albumId), res);
@@ -281,7 +287,7 @@ app.post('/participates', (req, res) => {
     respondAction(addNewParticipateRequest(req.body), res);
 });
 
-app.get('/participates/:albumId', (req, res) => {
+app.get('/participates/album/:albumId', (req, res) => {
     let { albumId } = req.params;
     respondDataFetch(getParticipants(+albumId), res);
 });
@@ -289,6 +295,11 @@ app.get('/participates/:albumId', (req, res) => {
 app.get('/participates/request/:userId', (req, res) => {
     let { userId } = req.params;
     respondDataFetch(getParticipateRequests(+userId), res);
+});
+
+app.get('/participates/check', (req, res) => {
+    const { userId, albumId } = req.query;
+    respondDataFetch(checkParticipateRequest(+userId, +albumId), res);
 });
 
 app.get('/participates/result/:applicantId', (req, res) => {

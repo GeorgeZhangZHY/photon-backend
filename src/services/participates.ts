@@ -1,5 +1,5 @@
 import { UserBriefInfo } from './users';
-import { insertData, executeQuery, updateData } from '../utils/sqliteUtils';
+import { insertData, executeQuery, updateData, checkExist } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
 import { globalMap } from '../config/globalMap';
 
@@ -10,7 +10,7 @@ type NewParticipate = {
 
 type ParticipateNotification = NewParticipate & UserBriefInfo & {
     albumName: string,
-    status: string,
+    status: 'pending' | 'agreed' | 'rejected' | 'succeeded' | 'failed',
     createTime: string
 };
 
@@ -90,4 +90,25 @@ export function setParticipateResultRead(albumId: number, userId: number, prevSt
         status: nextStatus[prevStatus]
     };
     return updateData('participates', ['aid', 'uid'], data);
+}
+
+// 查询是否已对某个相册请求添加为参与者，如已请求，则附加检查请求批准的的状态
+export function checkParticipateRequest(userId: number, albumId: number): Promise<{
+    hasRequested: boolean,
+    status?: string
+}> {
+    return checkExist('participates', {
+        uid: userId,
+        aid: albumId
+    }).then(result => {
+        const hasRequested = result;
+        if (hasRequested) {
+            return executeQuery('SELECT status FROM participates WHERE aid = ? and uid = ?', [albumId, userId])
+                .then(rows => {
+                    return { hasRequested, status: rows[0].status };
+                });
+        } else {
+            return Promise.resolve({ hasRequested });
+        }
+    });
 }

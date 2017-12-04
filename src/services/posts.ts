@@ -12,8 +12,7 @@ type NewPost = {
     cost: number,
     content: string,
     tags: string[],
-    photoUrls: string[],   // 对于浏览器端刚上传的图片，为base64编码的dataUrl；对于从服务器发送的图片，则为路径
-    themeId: number
+    photoUrls: string[]   // 对于浏览器端刚上传的图片，为base64编码的dataUrl；对于从服务器发送的图片，则为路径
 };
 
 type Post = {
@@ -24,9 +23,7 @@ type Post = {
     ownerAvatarUrl: string,
     launchTime: string,
     isClosed: boolean,
-    themeName: string,
     requiredRegionName: string,
-    themeCoverUrl: string,
     requestNum: number  // 收到的约拍请求数
 } & NewPost;
 
@@ -84,10 +81,9 @@ export function addNewPost(newPost: NewPost) {
 }
 
 export function getPost(postId: number): Promise<Post> {
-    const sqlStr = `SELECT p.*, t.tname, t.cover_url, u.uname, u.identity, u.gender, 
+    const sqlStr = `SELECT p.*, u.uname, u.identity, u.gender, 
                         u.avatar_url, ifnull(rq.rnum, 0) as rnum, r.rname
                     FROM posts p 
-                        LEFT JOIN themes t ON p.tid = t.tid 
                         LEFT JOIN regions r ON p.rid = r.rid
                         JOIN users u ON p.uid = u.uid
                         LEFT JOIN (
@@ -103,10 +99,9 @@ export function getPost(postId: number): Promise<Post> {
 export function getLatestPosts(pageNum: number, pageSize: number): Promise<Post[]> {
     let dataList: any[];
     // 获取非多值信息
-    const mainSqlStr = `SELECT p.*, t.tname, t.cover_url, u.uname, u.identity, u.gender,
+    const mainSqlStr = `SELECT p.*, u.uname, u.identity, u.gender,
                              u.avatar_url, ifnull(rq.rnum, 0) as rnum, r.rname
                         FROM posts p 
-                            LEFT JOIN themes t ON p.tid = t.tid 
                             LEFT JOIN regions r ON p.rid = r.rid
                             JOIN users u ON p.uid = u.uid
                             LEFT JOIN (
@@ -142,8 +137,6 @@ export function modifyPost(modifiedPost: Post) {
     delete modifiedPost.ownerGender;
     delete modifiedPost.ownerIdentity;
     delete modifiedPost.ownerName;
-    delete modifiedPost.themeName;
-    delete modifiedPost.themeCoverUrl;
     delete modifiedPost.requestNum;
 
     // 更新标签

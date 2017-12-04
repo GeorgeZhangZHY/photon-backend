@@ -5,7 +5,6 @@ export const globalMap = {
 
     password: 'upassword',
 
-    themeId: 'tid',
     albumId: 'aid',
     userId: 'uid',
     regionCode: 'rid',
@@ -14,8 +13,6 @@ export const globalMap = {
     postId: 'pid',
     wechatId: 'wechat_id',
     creatorId: 'creator_id',
-
-    themeDescription: 'tdesc',
 
     albumName: 'aname',
     themeName: 'tname',
@@ -28,7 +25,6 @@ export const globalMap = {
     gender: 'gender',
 
     avatarUrl: 'avatar_url',
-    themeCoverUrl: 'cover_url',
     wechatQRCodeUrl: 'wechat_qrcode_url',
 
     shotLocation: 'shot_location',

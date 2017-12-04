@@ -1,4 +1,4 @@
-import { insertData, executeQuery, deleteData, updateData } from '../utils/sqliteUtils';
+import { insertData, executeQuery, deleteData, updateData, checkExist } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
 import { UserBriefInfo } from './users';
 import { globalMap } from '../config/globalMap';
@@ -26,7 +26,7 @@ export function addNewLike(newLike: NewLike) {
 export function getLikesOfAlbum(albumId: number): Promise<Like[]> {
     const sqlStr = `SELECT l.*, u.uname, u.avatar_url, u.gender, u.identity, u.rid, r.rname
                     FROM likes l
-                        JOIN users u ON l.uid = u.uid
+                        LEFT JOIN users u ON l.uid = u.uid
                         LEFT JOIN regions r ON u.rid = r.rid
                     WHERE l.aid = ?
                     ORDER BY l.create_time ASC`;
@@ -66,4 +66,14 @@ export function setLikeRead(likerId: number, albumId: number) {
         has_read: 1
     };
     return updateData('likes', ['aid', 'uid'], data);
+}
+
+// 查询是否已对某个相册点了喜欢
+export function checkLike(userId: number, albumId: number): Promise<{ hasLiked: boolean }> {
+    return checkExist('likes', {
+        uid: userId,
+        aid: albumId
+    }).then(result => ({
+        hasLiked: result
+    }));
 }

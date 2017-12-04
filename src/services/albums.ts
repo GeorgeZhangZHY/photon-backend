@@ -6,7 +6,6 @@ import { updatePhotoUrls, getPhotoUrls } from './photoUrls';
 import { globalMap } from '../config/globalMap';
 
 type NewAlbum = {
-    themeId?: number,
     albumName: string,
     userId: number,
     shotTime: string,
@@ -21,8 +20,6 @@ type NewAlbum = {
 type Album = {
     albumId: number,
     createTime: string,
-    themeName?: string,
-    themeCoverUrl?: string
 } & NewAlbum;
 
 const objectToDataMap = globalMap;
@@ -46,8 +43,8 @@ function getAlbumTagsAndUrls(partialAlbumData: { aid: number } & any) {
 
 function getAlbum(albumId: number): Promise<Album> {
     // 单值属性
-    const mainSqlStr = `SELECT a.*, t.tname, t.cover_url
-                        FROM albums a LEFT JOIN themes t ON a.tid = t.tid
+    const mainSqlStr = `SELECT a.*
+                        FROM albums a 
                         WHERE a.aid = ?`;
     let data: any;
     return executeQuery(mainSqlStr, [albumId]).then(rows => {
@@ -86,10 +83,6 @@ export function modifyAlbum(modifiedAlbum: Album) {
     const aid = modifiedAlbum.albumId;
     delete modifiedAlbum.photoUrls;
     delete modifiedAlbum.tags;
-
-    // 删除其他非albums表的属性
-    delete modifiedAlbum.themeCoverUrl;
-    delete modifiedAlbum.themeName;
 
     // 更新标签
     const modifyTags = updateTags('album_tags', tags, 'aid', aid);
