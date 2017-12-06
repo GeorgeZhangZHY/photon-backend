@@ -13,6 +13,7 @@ export const globalMap = {
     postId: 'pid',
     wechatId: 'wechat_id',
     creatorId: 'creator_id',
+    entityId: 'entity_id',
 
     albumName: 'aname',
     themeName: 'tname',
@@ -37,13 +38,13 @@ export const globalMap = {
     shotTime: 'shot_time',
     createTime: 'create_time',
     commentTime: 'comment_time',
-    launchTime: 'launch_time',
     requestTime: 'request_time',
 
     status: 'status',
     message: 'message',
     content: 'content',
     cost: 'cost',
+    type: 'type',
 
     isClosed: 'is_closed',
     hasRead: 'has_read',

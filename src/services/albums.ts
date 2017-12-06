@@ -1,4 +1,4 @@
-import { insertData, executeQuery, updateData } from '../utils/sqliteUtils';
+import { insertData, executeQuery, updateData, deleteData } from '../utils/sqliteUtils';
 import { mapKeys } from '../utils/objectUtils';
 import { convertDataToImage } from '../utils/imageUtils';
 import { updateTags, getTags } from './tags';
@@ -17,7 +17,7 @@ type NewAlbum = {
     coverOrdinal: number    // 封面图片对应于其所有图片中的后缀
 };
 
-type Album = {
+export type Album = {
     albumId: number,
     createTime: string,
 } & NewAlbum;
@@ -41,7 +41,7 @@ function getAlbumTagsAndUrls(partialAlbumData: { aid: number } & any) {
     ]);
 }
 
-function getAlbum(albumId: number): Promise<Album> {
+export function getAlbum(albumId: number): Promise<Album> {
     // 单值属性
     const mainSqlStr = `SELECT a.*
                         FROM albums a 
@@ -133,4 +133,8 @@ export function getUserAlbums(userId: number, pageNum: number, pageSize: number)
     return executeQuery(sqlStr, [userId, pageSize, pageNum * pageSize]).then(rows => {
         return Promise.all((<any[]>rows).map(row => getAlbum(row.aid)));
     });
+}
+
+export function deleteAlbum(albumId: number) {
+    return deleteData('albums', { aid: albumId });
 }

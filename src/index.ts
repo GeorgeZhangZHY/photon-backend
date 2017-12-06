@@ -7,7 +7,7 @@ import fetchAllCostOptions from './services/costOptions';
 import fetchAllIdentities from './services/identities';
 import fetchAllGenders from './services/genders';
 import fetchAllTags from './services/tags';
-import { addNewPost, getLatestPosts, modifyPost, getPost, closePost } from './services/posts';
+import { addNewPost, getLatestPosts, modifyPost, getPost, closePost, getUserPosts } from './services/posts';
 import {
     addNewUser, configuredPassport, modifyUserInfo, modifyAvatar, modifyQRCode, getUserBriefInfo, checkUserName
 } from './services/users';
@@ -19,12 +19,16 @@ import {
 import {
     addNewFollow, cancelFollow, getFollowedUsers, getFollowers, getUnreadFollows, setFollowRead, checkFollow
 } from './services/follows';
-import { addNewAlbum, getLatestAlbums, getLikedAlbums, modifyAlbum, getUserAlbums } from './services/albums';
+import {
+    addNewAlbum, getLatestAlbums, getLikedAlbums,
+    modifyAlbum, getUserAlbums, deleteAlbum
+} from './services/albums';
 import {
     addNewParticipateRequest, getParticipants, getParticipateRequests,
     getParticipateResults, resolveParticipate, setParticipateResultRead,
     checkParticipateRequest
 } from './services/participates';
+import { getFollowedUsersActivities, getSingleUserActivities } from './services/activities';
 
 const app = express();
 
@@ -119,11 +123,20 @@ app.get('/logout', (req, res) => {
 });
 
 app.get('/posts', (req, res) => {
-    let { pageNum, pageSize } = req.query;  // query中的是字符串
-    respondDataFetch(getLatestPosts(+pageNum, +pageSize), res);
+    const { pageNum, pageSize } = req.query;  // query中的是字符串
+    const condition = { ...req.query };
+    delete condition.pageNum;
+    delete condition.pageSize;
+    respondDataFetch(getLatestPosts(+pageNum, +pageSize, condition), res);
 });
 
-app.get('/posts/:postId', (req, res) => {
+app.get('/posts/user/:userId', (req, res) => {
+    const { userId } = req.params;
+    const { pageNum, pageSize } = req.query;
+    respondDataFetch(getUserPosts(+userId, +pageNum, +pageSize), res);
+});
+
+app.get('/posts/single/:postId', (req, res) => {
     let { postId } = req.params;    // params中的值是字符串
     respondDataFetch(getPost(+postId), res);
 });
@@ -283,6 +296,11 @@ app.put('/albums', (req, res) => {
     respondAction(modifyAlbum(req.body), res);
 });
 
+app.delete('/albums/:albumId', (req, res) => {
+    const { albumId } = this.params;
+    respondAction(deleteAlbum(+albumId), res);
+});
+
 app.post('/participates', (req, res) => {
     respondAction(addNewParticipateRequest(req.body), res);
 });
@@ -315,6 +333,16 @@ app.put('/participates', (req, res) => {
 app.put('/participates/result', (req, res) => {
     let { albumId, userId, prevStatus } = req.body;
     respondAction(setParticipateResultRead(albumId, userId, prevStatus), res);
+});
+
+app.get('/activities/followed', (req, res) => {
+    const { userId, pageNum, pageSize } = req.query;
+    respondDataFetch(getFollowedUsersActivities(+userId, +pageNum, +pageSize), res);
+});
+
+app.get('/activities/single', (req, res) => {
+    const { userId, pageNum, pageSize } = req.query;
+    respondDataFetch(getSingleUserActivities(+userId, +pageNum, +pageSize), res);
 });
 
 const server = app.listen(8080, () => {

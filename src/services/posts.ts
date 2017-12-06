@@ -1,5 +1,5 @@
 import { executeQuery, insertData, updateData } from '../utils/sqliteUtils';
-import { mapKeys } from '../utils/objectUtils';
+import { mapKeys, getKeysAndValues } from '../utils/objectUtils';
 import { convertDataToImage } from '../utils/imageUtils';
 import { updateTags, getTags } from './tags';
 import { updatePhotoUrls, getPhotoUrls } from './photoUrls';
@@ -15,17 +15,25 @@ type NewPost = {
     photoUrls: string[]   // 对于浏览器端刚上传的图片，为base64编码的dataUrl；对于从服务器发送的图片，则为路径
 };
 
-type Post = {
+export type Post = {
     postId: number,
     ownerName: string,
     ownerIdentity: number,
     ownerGender: number,
     ownerAvatarUrl: string,
-    launchTime: string,
+    createTime: string,
     isClosed: boolean,
     requiredRegionName: string,
     requestNum: number  // 收到的约拍请求数
 } & NewPost;
+
+type Condition = {
+    ownerId?: number,
+    costOption?: string,
+    ownerGender?: string,
+    requiredRegionCode?: number,
+    ownerIdentity?: string
+};
 
 const objectToDataMap = createLocalMap({
     ownerName: 'uname',
@@ -96,8 +104,31 @@ export function getPost(postId: number): Promise<Post> {
 }
 
 // pageNum从0开始
-export function getLatestPosts(pageNum: number, pageSize: number): Promise<Post[]> {
-    let dataList: any[];
+export function getLatestPosts(pageNum: number, pageSize: number, condition?: Condition): Promise<Post[]> {
+    let dataList: any[] = [];
+    // 设置筛选条件
+    let extraSqlStr = '';
+    let extraValues = [];
+    if (condition) {
+        // 若传入字符串，转为数字
+        if (condition.ownerId) {
+            condition.ownerId = +condition.ownerId;
+        }
+        if (condition.requiredRegionCode) {
+            condition.requiredRegionCode = +condition.requiredRegionCode;
+        }
+        const conditionMap = {
+            ownerId: 'p.uid',
+            costOption: 'p.coption',
+            ownerGender: 'u.gender',
+            requiredRegionCode: 'p.rid',
+            ownerIdentity: 'u.identity'
+        };
+        const keysAndValues = getKeysAndValues(mapKeys(condition, conditionMap));
+        extraSqlStr = ' AND ' + keysAndValues.keys.map(key => `${key} = ?`).join(' AND ');
+        extraValues = keysAndValues.values;
+    }
+
     // 获取非多值信息
     const mainSqlStr = `SELECT p.*, u.uname, u.identity, u.gender,
                              u.avatar_url, ifnull(rq.rnum, 0) as rnum, r.rname
@@ -107,14 +138,18 @@ export function getLatestPosts(pageNum: number, pageSize: number): Promise<Post[
                             LEFT JOIN (
                                 SELECT pid, count(*) AS rnum FROM requests
                                 GROUP BY pid ) rq ON p.pid = rq.pid
-                        WHERE p.is_closed = 0
-                        ORDER BY p.launch_time DESC LIMIT ? OFFSET ?`;
+                        WHERE p.is_closed = 0 ${extraSqlStr}
+                        ORDER BY p.create_time DESC LIMIT ? OFFSET ?`;
 
-    return executeQuery(mainSqlStr, [pageSize, pageNum * pageSize]).then(rows => {
+    return executeQuery(mainSqlStr, extraValues.concat([pageSize, pageNum * pageSize])).then(rows => {
         // 获取多值信息
         dataList = <any[]>rows;
         return Promise.all(dataList.map(row => getPostTagsAndUrls(row)));
     }).then(() => <Post[]>dataList.map(data => mapKeys(data, objectToDataMap, true)));
+}
+
+export function getUserPosts(userId: number, pageNum: number, pageSize: number): Promise<Post[]> {
+    return getLatestPosts(pageNum, pageSize, { ownerId: userId });
 }
 
 export function closePost(pid: number) {
