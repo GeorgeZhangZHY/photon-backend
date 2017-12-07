@@ -29,10 +29,10 @@ export type Post = {
 
 type Condition = {
     ownerId?: number,
+    regionCode?: number,
     costOption?: string,
-    ownerGender?: string,
-    requiredRegionCode?: number,
-    ownerIdentity?: string
+    identity?: string,
+    gender?: string
 };
 
 const objectToDataMap = createLocalMap({
@@ -114,18 +114,29 @@ export function getLatestPosts(pageNum: number, pageSize: number, condition?: Co
         if (condition.ownerId) {
             condition.ownerId = +condition.ownerId;
         }
-        if (condition.requiredRegionCode) {
-            condition.requiredRegionCode = +condition.requiredRegionCode;
+
+        // 针对地区树状结构单独处理
+        let regionCondtion = '';
+        if (condition.regionCode) {
+            const regionCodeStr = condition.regionCode.toString();
+            regionCondtion = regionCodeStr.endsWith('0000') ?
+                `p.rid LIKE '${regionCodeStr.substring(0, 2)}%'`    // 筛选某个省
+                : `p.rid = ${regionCodeStr}`;
+            delete condition.regionCode;
         }
+        
         const conditionMap = {
             ownerId: 'p.uid',
             costOption: 'p.coption',
-            ownerGender: 'u.gender',
-            requiredRegionCode: 'p.rid',
-            ownerIdentity: 'u.identity'
+            gender: 'u.gender',
+            regionCode: 'p.rid',
+            identity: 'u.identity'
         };
         const keysAndValues = getKeysAndValues(mapKeys(condition, conditionMap));
         extraSqlStr = ' AND ' + keysAndValues.keys.map(key => `${key} = ?`).join(' AND ');
+        if (regionCondtion) {
+            extraSqlStr += ' AND ' + regionCondtion;
+        }
         extraValues = keysAndValues.values;
     }
 
