@@ -37,11 +37,14 @@ app.use(expressSessionHandler);
 app.use(configuredPassport.initialize());
 app.use(configuredPassport.session());
 
-const permittedOrigin = 'http://localhost:3000';
+app.all('*', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
+});
 
 function respondDataFetch(asyncData: Promise<{} | Array<any>>, res: Response) {
     asyncData.then(data => {
-        res.setHeader('Access-Control-Allow-Origin', permittedOrigin);
         res.send(data);
     }).catch(err => {
         res.sendStatus(500);

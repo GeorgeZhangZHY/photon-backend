@@ -109,7 +109,7 @@ export function getLatestPosts(pageNum: number, pageSize: number, condition?: Co
     // 设置筛选条件
     let extraSqlStr = '';
     let extraValues = [];
-    if (condition) {
+    if (condition && (Object.getOwnPropertyNames(condition).length > 0)) {  // 传入且不为空对象
         // 若传入字符串，转为数字
         if (condition.ownerId) {
             condition.ownerId = +condition.ownerId;
@@ -124,7 +124,7 @@ export function getLatestPosts(pageNum: number, pageSize: number, condition?: Co
                 : `p.rid = ${regionCodeStr}`;
             delete condition.regionCode;
         }
-        
+
         const conditionMap = {
             ownerId: 'p.uid',
             costOption: 'p.coption',
