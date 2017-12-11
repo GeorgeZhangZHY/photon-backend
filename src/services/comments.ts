@@ -18,7 +18,7 @@ type Comment = UserBriefInfo & NewComment & {
 type CommentNotification = UserBriefInfo & NewComment & {
     albumName: string,
     commentTime: string,
-    commentId: string,
+    commentId: number,
     hasRead: number
 };
 

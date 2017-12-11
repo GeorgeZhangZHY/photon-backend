@@ -32,6 +32,7 @@ export const globalMap = {
     shotDevice: 'shot_device',
     description: 'description',
     photoUrls: 'photo_urls',
+    tags: 'tags',
 
     coverOrdinal: 'cover_ordinal',
 

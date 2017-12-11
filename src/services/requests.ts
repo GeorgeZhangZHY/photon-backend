@@ -22,7 +22,8 @@ type RequesterInfo = {
 // 他人对该用户发起的约拍请求
 type OthersRequest = {
     hasRead: boolean,
-    requestTime: string
+    requestTime: string,
+    postContent: string
 } & NewRequest & RequesterInfo;
 
 // 用户自己向他人发起的约拍请求
@@ -31,6 +32,7 @@ type OwnRequest = {
 } & NewRequest;
 
 const objectToDataMap = createLocalMap({
+    postContent: 'content',
     requesterId: 'uid',
     requesterName: 'uname'
 });
@@ -53,7 +55,7 @@ export function getOwnRequests(userId: number): Promise<OwnRequest[]> {
  */
 export function getOthersRequests(userId: number, pageNum: number, pageSize: number): Promise<OthersRequest[]> {
     const sqlStr = `SELECT r.*, u.gender, u.identity, u.uname, u.phone_num, u.qq_num, 
-                        u.wechat_id, u.wechat_qrcode_url, u.avatar_url
+                        u.wechat_id, u.wechat_qrcode_url, u.avatar_url, p.content
                     FROM users u, requests r, posts p
                     WHERE p.uid = ? AND p.pid = r.pid AND r.uid = u.uid
                     ORDER BY request_time DESC LIMIT ? OFFSET ?`;
@@ -66,7 +68,7 @@ export function getOthersRequests(userId: number, pageNum: number, pageSize: num
  */
 export function getUnreadOthersRequests(userId: number): Promise<OthersRequest[]> {
     const sqlStr = `SELECT r.*, u.gender, u.identity, u.uname, u.phone_num, u.qq_num, 
-                        u.wechat_id, u.wechat_qrcode_url, u.avatar_url
+                        u.wechat_id, u.wechat_qrcode_url, u.avatar_url, p.content
                     FROM users u, requests r, posts p
                     WHERE p.uid = ? AND p.pid = r.pid AND r.uid = u.uid AND r.has_read = 0
                     ORDER BY request_time DESC`;

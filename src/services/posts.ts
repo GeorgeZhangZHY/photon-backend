@@ -133,7 +133,8 @@ export function getLatestPosts(pageNum: number, pageSize: number, condition?: Co
             identity: 'u.identity'
         };
         const keysAndValues = getKeysAndValues(mapKeys(condition, conditionMap));
-        extraSqlStr = ' AND ' + keysAndValues.keys.map(key => `${key} = ?`).join(' AND ');
+        const otherConditions = keysAndValues.keys.map(key => `${key} = ?`).join(' AND ');
+        extraSqlStr = otherConditions && ' AND ' + otherConditions;
         if (regionCondtion) {
             extraSqlStr += ' AND ' + regionCondtion;
         }

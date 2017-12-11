@@ -74,7 +74,7 @@ export function getParticipateResults(applicantId: number): Promise<ParticipateN
                         JOIN albums a ON p.aid = a.aid
                         JOIN users u ON a.uid = u.uid
                         LEFT JOIN regions r ON u.rid = r.rid
-                    WHERE p.uid = ? AND (p.status = 'rejected' OR p.status = 'agreed')`; // 其中的用户信息是主人的
+                    WHERE p.uid = ? AND (p.status = 'rejected' OR p.status = 'agreed')`; // 其中的用户信息是相册主人的
     return executeQuery(sqlStr, [applicantId])
         .then(rows => (<any[]>rows).map(row => <ParticipateNotification>mapKeys(row, objectToDataMap, true)));
 }
